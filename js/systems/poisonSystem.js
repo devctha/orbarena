@@ -20,7 +20,7 @@
       world.poisonPools.push({ owner, x, y, radius: options.radius || 58, life: options.life || 5, maxLife: options.life || 5, tick: 0, stacks: options.stacks || 1, dps: options.dps || 1.5, color: options.color || owner.color });
     }
     update(world, dt) {
-      for (const fighter of [world.player, world.enemy]) {
+      for (const fighter of OA.getFighters(world)) {
         fighter.healingMultiplier = 1;
         const poison = fighter.poison;
         if (!poison || poison.duration <= 0 || poison.stacks <= 0) continue;
@@ -38,7 +38,8 @@
       world.poisonPools ||= [];
       for (const pool of world.poisonPools) {
         pool.life -= dt; pool.tick -= dt;
-        const target = pool.owner.team === "player" ? world.enemy : world.player;
+        const target = OA.findTarget(world, pool.owner);
+        if (!target) continue;
         if (pool.tick <= 0 && Math.hypot(target.x - pool.x, target.y - pool.y) <= pool.radius + target.radius) { pool.tick = 0.65; this.apply(target, pool.owner, pool.stacks, 4, pool.dps); }
       }
       world.poisonPools = world.poisonPools.filter((pool) => pool.life > 0);

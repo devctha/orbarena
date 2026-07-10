@@ -35,6 +35,9 @@
       }
       target._damageTypes||=new Set();target._damageTypes.add(source);
       this.burstProtection?.record(world, target, dealt, metadata);
+      attacker.telemetry.damageDealt = (attacker.telemetry.damageDealt || 0) + dealt;
+      target.telemetry.damageTaken = (target.telemetry.damageTaken || 0) + dealt;
+      world.teamSystem?.recordDamage(world, attacker, target, dealt);
 
       attacker.telemetry[`${source === "projectile" ? "weapon" : source}Damage`] = (attacker.telemetry[`${source === "projectile" ? "weapon" : source}Damage`] || 0) + dealt;
       this.logger.logDamage(world.time, attacker, target, dealt, critical, source === "projectile" ? "weapon" : source, metadata.abilityId);
@@ -44,7 +47,7 @@
       if (critical) this.particles.emitTyped?.("critical", target.x, target.y, attacker.color, 18, "critical");
       if (target.healthRatio() <= 0.5 && !target._halfTriggered) { target._halfTriggered = true; world.events.push({ type: "halfHealth", fighter: target, attacker }); }
       if (target.healthRatio() <= 0.2 && !target._lowTriggered) { target._lowTriggered = true; world.events.push({ type: "lowHealth", fighter: target, attacker }); }
-      if (!target.alive) { this.particles.emitDeath(target.x, target.y, target.color); world.camera.shake?.add(.9,.45,34,"critical"); }
+      if (!target.alive) { this.particles.emitDeath(target.x, target.y, target.color); world.camera.shake?.add(.9,.45,34,"critical"); world.teamSystem?.recordElimination(world, target, attacker, { ...metadata, source, critical }); }
       return dealt;
     }
 
@@ -75,6 +78,12 @@
       if (alreadyHandled) return;
       a.contactCooldown = 0.07;
       b.contactCooldown = 0.07;
+      if (world.teamSystem && !world.teamSystem.isHostile(world, a, b)) {
+        const hitX = a.x + contact.nx * a.radius, hitY = a.y + contact.ny * a.radius;
+        this.particles.emitImpact(hitX, hitY, a.teamColor || a.color, impact.relativeSpeed * .55, contact.nx, contact.ny);
+        world.events.push({ type: "allyCollision", fighter: a, target: b, impact: impactEnergy });
+        return;
+      }
       const intensity = world.intensity || 1;
       let multiplier = attacker.impactMultiplier * attacker.nextImpactMultiplier;
       if (attacker.perkEffects.firstImpactDouble && !attacker._firstImpactUsed) { multiplier *= 2; attacker._firstImpactUsed = true; }

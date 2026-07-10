@@ -11,7 +11,7 @@
     }
 
     update(world, dt) {
-      const fighters = [world.player, world.enemy];
+      const fighters = OA.getFighters(world);
       for (const fighter of fighters) {
         const fighterScale = world.timeScales?.fighter[fighter.team] || 1;
         const abilityScale = world.timeScales?.ability[fighter.team] || 1;
@@ -28,11 +28,12 @@
           const fighterStep = step * (world.timeScales?.fighter[fighter.team] || 1);
           fighter.forceX = 0;
           fighter.forceY = 0;
-          if (world.phase === "active") this.steer(world, fighter, fighter === world.player ? world.enemy : world.player, fighterStep);
+          const target = OA.findTarget(world, fighter, fighter.ai.style === "Oportunista" ? "lowHealth" : "nearest");
+          if (world.phase === "active" && target) this.steer(world, fighter, target, fighterStep);
           this.applyEnvironment(world, fighter);
           this.integrate(world, fighter, fighterStep);
         }
-        this.resolveFighterCollision(world);
+        this.resolveFighterCollisions(world, fighters);
         for (const fighter of fighters) {
           this.resolveWalls(world, fighter);
           world.arenaSystem?.resolveObstacles(world, fighter);
@@ -142,9 +143,9 @@
       const padding = (world.arena?.padding || this.bounds.padding)+(world.arena?.inset||0);
       const distances = [
         { distance: fighter.x - padding, x: -1, y: 0 },
-        { distance: this.bounds.width - padding - fighter.x, x: 1, y: 0 },
+        { distance: (world.arena.width || this.bounds.width) - padding - fighter.x, x: 1, y: 0 },
         { distance: fighter.y - padding, x: 0, y: -1 },
-        { distance: this.bounds.height - padding - fighter.y, x: 0, y: 1 }
+        { distance: (world.arena.height || this.bounds.height) - padding - fighter.y, x: 0, y: 1 }
       ];
       return distances.sort((a, b) => a.distance - b.distance)[0];
     }
@@ -188,9 +189,12 @@
       fighter.y += fighter.vy * dt;
     }
 
-    resolveFighterCollision(world) {
-      const a = world.player;
-      const b = world.enemy;
+    resolveFighterCollisions(world, fighters) {
+      for (let first = 0; first < fighters.length; first += 1) for (let second = first + 1; second < fighters.length; second += 1) this.resolveFighterCollision(world, fighters[first], fighters[second]);
+    }
+
+    resolveFighterCollision(world, a = world.player, b = world.enemy) {
+      if (!a?.alive || !b?.alive) return;
       let contact = OA.Collision.circles(a, b);
       if (!contact) {
         const swept = OA.Collision.sweptCircles(a, b);
@@ -216,9 +220,9 @@
       if (world.arena?.shape === "circle") return this.resolveCircularWall(world, fighter);
       const padding = (world.arena?.padding ?? this.bounds.padding)+(world.arena?.inset||0);
       const minX = padding + fighter.radius;
-      const maxX = this.bounds.width - padding - fighter.radius;
+      const maxX = (world.arena.width || this.bounds.width) - padding - fighter.radius;
       const minY = padding + fighter.radius;
-      const maxY = this.bounds.height - padding - fighter.radius;
+      const maxY = (world.arena.height || this.bounds.height) - padding - fighter.radius;
       let nx = 0;
       let ny = 0;
       if (fighter.x < minX) { fighter.x = minX; nx = 1; }

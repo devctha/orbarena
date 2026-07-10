@@ -45,8 +45,8 @@
         summon.shotTimer -= scaledDt;
         if (!summon.owner.alive && summon.linked) summon.life = 0;
         if (summon.life <= 0 || summon.health <= 0) { this.remove(world, summon); continue; }
-        const target = summon.team === "player" ? world.enemy : world.player;
-        if (!target.alive) continue;
+        const target = OA.findTarget(world, summon.owner);
+        if (!target) continue;
         if (summon.behavior === "orbit") this.orbit(summon, scaledDt);
         else if (summon.behavior === "stationary") this.stationary(world, summon, target, scaledDt);
         else this.chase(world, summon, target, scaledDt);
@@ -111,8 +111,8 @@
     keepInArena(world, summon) {
       if (world.arena?.shape === "circle") { const radial = OA.Vector.normalize(summon.x - world.arena.centerX, summon.y - world.arena.centerY); const limit = world.arena.radius - summon.radius; if (radial.length > limit) { summon.x = world.arena.centerX + radial.x * limit; summon.y = world.arena.centerY + radial.y * limit; summon.vx *= -0.55; summon.vy *= -0.55; } return; }
       const padding = world.arena.padding + (world.arena.inset||0) + summon.radius;
-      summon.x = OA.clamp(summon.x, padding, OA.CONFIG.arena.width - padding);
-      summon.y = OA.clamp(summon.y, padding, OA.CONFIG.arena.height - padding);
+      summon.x = OA.clamp(summon.x, padding, (world.arena.width || OA.CONFIG.arena.width) - padding);
+      summon.y = OA.clamp(summon.y, padding, (world.arena.height || OA.CONFIG.arena.height) - padding);
     }
   }
   OA.SummonSystem = SummonSystem;

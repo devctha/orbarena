@@ -27,6 +27,11 @@
       this.context.imageSmoothingEnabled = true;
     }
 
+    resize(width, height) {
+      if (width === this.width && height === this.height) return;
+      this.width = width; this.height = height; this.arenaCache.clear(); this.configureCanvas();
+    }
+
     createSurface(width, height) {
       if (typeof OffscreenCanvas !== "undefined") return new OffscreenCanvas(width, height);
       const surface = document.createElement("canvas"); surface.width = width; surface.height = height; return surface;
@@ -61,9 +66,10 @@
 
     render(world, alpha) {
       const context = this.context;
-      const distance = Math.hypot(world.player.x - world.enemy.x, world.player.y - world.enemy.y);
+      const fighters = OA.getFighters(world), focus = world.controlledFighter || world.player || fighters[0], target = focus && OA.findTarget(world, focus);
+      const distance = focus && target ? Math.hypot(focus.x - target.x, focus.y - target.y) : 300;
       this.performanceLevel = world.performanceLevel || 0;
-      const peakSpeed=Math.max(world.player.currentSpeed(),world.enemy.currentSpeed()),zoomTarget = this.settings?.reducedMotion ? 1 : OA.clamp(1.04 - distance / 5400-peakSpeed/26000 + world.camera.trauma * 0.025-(world.camera.cinematicZoom||0), 0.89, 1.07);
+      const peakSpeed=Math.max(0,...fighters.map((fighter)=>fighter.currentSpeed())),zoomTarget = this.settings?.reducedMotion ? 1 : OA.clamp(1.04 - distance / 5400-peakSpeed/26000 + world.camera.trauma * 0.025-(world.camera.cinematicZoom||0), 0.89, 1.07);
       world.camera.zoom += (zoomTarget - world.camera.zoom) * 0.08;
       const trauma = this.settings?.reducedMotion ? 0 : world.camera.trauma * world.physics.camera;
       const shakeX = Math.sin(world.visualTime * 91) * trauma * 8 + Math.sin(world.visualTime * 37) * this.particles.shake * 0.35;
@@ -76,13 +82,11 @@
       this.drawArena(context, world);
       this.drawDecals(context,world);
       this.drawZones(context, world);
-      this.drawTrail(context, world.player);
-      this.drawTrail(context, world.enemy);
+      for (const fighter of fighters) this.drawTrail(context, fighter);
       this.drawEffects(context, world);
       this.drawProjectiles(context);
       this.drawSummons(context, world);
-      if (world.player.alive) this.drawFighter(context, world.player, alpha, world.visualTime);
-      if (world.enemy.alive) this.drawFighter(context, world.enemy, alpha, world.visualTime);
+      for (const fighter of fighters) if (fighter.alive) this.drawFighter(context, fighter, alpha, world.visualTime);
       this.drawParticles(context);
       this.drawWaves(context);
       this.drawLightning(context);
@@ -141,6 +145,9 @@
         context.strokeStyle = this.hexToRgba(zone.color, opacity + 0.15);
         context.setLineDash([7, 10]);
         context.beginPath(); context.arc(zone.x, zone.y, zone.radius * (0.82 + Math.sin(world.visualTime * 4) * 0.06), 0, Math.PI * 2); context.stroke();
+      }
+      if (world.objective) {
+        context.fillStyle=world.objective.contested?"rgba(255,96,128,.12)":"rgba(88,232,244,.09)";context.strokeStyle=world.objective.contested?"#ff6685":"#58e8f4";context.lineWidth=2;context.setLineDash([9,7]);context.beginPath();context.arc(world.objective.x,world.objective.y,world.objective.radius,0,Math.PI*2);context.fill();context.stroke();
       }
       context.setLineDash([]);
       context.restore();
@@ -392,7 +399,7 @@
     }
 
     drawDebug(context, world) {
-      for (const fighter of [world.player, world.enemy]) {
+      for (const fighter of OA.getFighters(world)) {
         context.lineWidth = 1.5;
         context.strokeStyle = "#ffcc58";
         context.beginPath(); context.moveTo(fighter.x, fighter.y); context.lineTo(fighter.x + fighter.vx * 0.18, fighter.y + fighter.vy * 0.18); context.stroke();

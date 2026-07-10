@@ -6,6 +6,17 @@
     constructor(options) {
       this.id = options.id;
       this.team = options.team;
+      this.teamId = options.teamId || options.team;
+      this.teamColor = options.teamColor || options.color;
+      this.teamName = options.teamName || options.team;
+      this.controlMode = options.controlMode || "AUTO";
+      this.autoCast = Object.create(null);
+      this.abilityState = Object.create(null);
+      this.globalCooldown = 0;
+      this.castQueue = null;
+      this.kills = 0;
+      this.assists = 0;
+      this.deaths = 0;
       this.name = options.name;
       this.color = options.color;
       this.stroke = options.stroke;
@@ -106,7 +117,8 @@
         projectilesHit: 0, blockedDamage: 0, healing: 0, shieldGenerated: 0,
         burstProtectionActivations: 0, damagePrevented: 0, recoveryHealing: 0,
         particlesEmitted: 0, peakParticles: 0, minFps: 60, powerUpsCollected: 0,
-        ultimatesUsed: 0, suddenDeathTime: 0
+        ultimatesUsed: 0, suddenDeathTime: 0, damageDealt: 0, damageTaken: 0,
+        kills: 0, assists: 0, deaths: 0, objectives: 0
       };
     }
 

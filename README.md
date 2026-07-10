@@ -4,7 +4,9 @@ Criado, desenvolvido, projetado, concebido e dirigido por **Duke Dandalian**.
 
 Todos os direitos de criação, design, desenvolvimento e direção atribuídos a Duke Dandalian.
 
-Versão `0.4.0-cinematic-pacing` do auto battler para navegador. O modo principal utiliza a Arena Clássica retangular, com quatro paredes físicas, ricochetes fortes, Wall Boost e movimentação arcade. As arenas circulares anteriores continuam disponíveis apenas como modos alternativos.
+Versão `0.5.0-commercial-remaster` do auto battler para navegador. O modo principal utiliza a Arena Clássica retangular, com quatro paredes físicas, ricochetes fortes, Wall Boost, draft em nove etapas, equipes até 4v4, controle manual/misto, replays e progressão local. As arenas circulares anteriores continuam disponíveis apenas como modos alternativos.
+
+O remaster acrescenta HUD de quatro skills + Ultimate, Auto Cast por habilidade, 20 modos, 24 modificadores, arenas até 1760×990, assistências e kill feed, MVP/highlights, música dinâmica, replay por snapshots, spectator, sandbox, editor de arena, modo foto, perfil, conquistas, coleção, comparador e saves V5 retrocompatíveis. Consulte [COMMERCIAL_REMASTER_V5.md](COMMERCIAL_REMASTER_V5.md) para o diagnóstico e a matriz de validação.
 
 ## Conteúdo
 

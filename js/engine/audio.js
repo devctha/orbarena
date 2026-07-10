@@ -4,9 +4,14 @@
 
   class AudioSystem {
     constructor(enabled = true) {
-      this.enabled = enabled;
+      const settings = typeof enabled === "object" ? enabled : { enabled };
+      this.enabled = settings.enabled !== false && settings.audio !== false;
       this.context = null;
       this.master = null;
+      this.groups = Object.create(null);
+      this.voices = new Set();
+      this.voiceLimit = 24;
+      this.volumes = { master: Number(settings.masterVolume ?? .8), effects: Number(settings.effectsVolume ?? .8), ui: Number(settings.uiVolume ?? .7), music: Number(settings.musicVolume ?? .55), ambience: Number(settings.ambienceVolume ?? .5) };
     }
 
     unlock() {
@@ -16,21 +21,25 @@
         if (!Context) return;
         this.context = new Context();
         this.master = this.context.createGain();
-        this.master.gain.value = 0.09;
+        this.master.gain.value = 0.09 * this.volumes.master;
         this.master.connect(this.context.destination);
+        for (const name of ["effects", "ui", "music", "ambience"]) { const group = this.context.createGain(); group.gain.value = this.volumes[name]; group.connect(this.master); this.groups[name] = group; }
       }
       if (this.context.state === "suspended") this.context.resume();
     }
 
     setEnabled(enabled) {
       this.enabled = enabled;
-      if (this.master) this.master.gain.value = enabled ? 0.09 : 0;
+      if (this.master) this.master.gain.value = enabled ? 0.09 * this.volumes.master : 0;
     }
 
-    tone(frequency, duration, type = "sine", volume = 0.5, slide = 0, delay = 0) {
+    setVolume(channel, value) { const amount = OA.clamp(Number(value), 0, 1); this.volumes[channel] = amount; if (channel === "master" && this.master) this.master.gain.value = this.enabled ? .09 * amount : 0; else if (this.groups[channel]) this.groups[channel].gain.value = amount; }
+
+    tone(frequency, duration, type = "sine", volume = 0.5, slide = 0, delay = 0, channel = "effects", pan = 0) {
       if (!this.enabled) return;
       this.unlock();
       if (!this.context || !this.master) return;
+      if (this.voices.size >= this.voiceLimit && channel !== "ui") return;
       const now = this.context.currentTime + delay;
       const oscillator = this.context.createOscillator();
       const gain = this.context.createGain();
@@ -39,7 +48,11 @@
       oscillator.frequency.exponentialRampToValueAtTime(Math.max(30, frequency + slide), now + duration);
       gain.gain.setValueAtTime(Math.max(0.001, volume), now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
-      oscillator.connect(gain).connect(this.master);
+      const destination = this.groups[channel] || this.groups.effects || this.master;
+      if (this.context.createStereoPanner) { const panner = this.context.createStereoPanner(); panner.pan.value = OA.clamp(pan, -1, 1); oscillator.connect(gain).connect(panner).connect(destination); }
+      else oscillator.connect(gain).connect(destination);
+      this.voices.add(oscillator);
+      oscillator.onended = () => { this.voices.delete(oscillator); try { oscillator.disconnect(); gain.disconnect(); } catch (_) { /* already released */ } };
       oscillator.start(now);
       oscillator.stop(now + duration);
     }
@@ -72,7 +85,7 @@
     }
 
     countdown(number) { this.tone(number === 0 ? 620 : 300 + number * 45, number === 0 ? 0.24 : 0.1, "square", 0.18, 80); }
-    interface(kind="select") { this.tone(kind==="confirm"?520:390,.055,"sine",.07,45); }
+    interface(kind="select") { this.tone(kind==="confirm"?520:390,.055,"sine",.07,45,0,"ui"); }
     movement(speed=300) { this.tone(180+Math.min(220,speed*.25),.045,"triangle",.035,30); }
     clone() { this.ability("clones",18); }
     poison() { this.ability("veneno",16); }
@@ -81,6 +94,10 @@
     ultimate() { this.ability("ultimate",70); }
     victory() { [0, 0.12, 0.25].forEach((delay, index) => setTimeout(() => this.tone([330, 440, 660][index], 0.3, "triangle", 0.22, 70), delay * 1000)); }
     defeat() { this.tone(180, 0.55, "sawtooth", 0.18, -110); }
+    powerUp() { this.tone(460,.13,"sine",.12,180); }
+    killFeed() { this.tone(240,.08,"square",.07,-35,0,"ui"); }
+    cancel() { this.tone(170,.06,"triangle",.06,-55,0,"ui"); }
+    dispose() { for (const voice of this.voices) try { voice.stop(); } catch (_) {} this.voices.clear(); }
   }
 
   OA.AudioSystem = AudioSystem;

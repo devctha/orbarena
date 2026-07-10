@@ -16,6 +16,8 @@
       this.speed = 1;
       this.frameRequest = 0;
       this.fps = 60;
+      this.targetFps = 60;
+      this.lastRenderTime = 0;
       this.boundTick = (time) => this.tick(time);
       document.addEventListener("visibilitychange", () => {
         if (document.hidden && this.running) this.setPaused(true, "visibility");
@@ -41,9 +43,12 @@
     }
 
     setSpeed(speed) { this.speed = OA.clamp(Number(speed) || 1, 0.5, 4); }
+    setTargetFps(value) { this.targetFps = value === "unlimited" ? 0 : OA.clamp(Number(value) || 60, 30, 240); }
 
     tick(now) {
       if (!this.running) return;
+      if (this.targetFps && this.lastRenderTime && now - this.lastRenderTime < 1000 / this.targetFps - .5) { this.frameRequest = requestAnimationFrame(this.boundTick); return; }
+      this.lastRenderTime = now;
       const realDelta = Math.min(this.maxFrame, Math.max(0, (now - this.lastTime) / 1000));
       this.lastTime = now;
       this.fps += ((realDelta > 0 ? 1 / realDelta : 60) - this.fps) * 0.08;

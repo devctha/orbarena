@@ -38,8 +38,9 @@
         projectile.life -= projectileDt;
         projectile.armTimer = Math.max(0, projectile.armTimer - projectileDt);
         if (projectile.life <= 0) { projectile.active = false; continue; }
-        const target = projectile.team === "player" ? world.enemy : world.player;
-        if (!target.alive) { projectile.active = false; continue; }
+        const targets = OA.getFighters(world).filter((fighter) => fighter.alive && !projectile.hitTargets.has(fighter.id) && (world.teamSystem ? world.teamSystem.isHostile(world, projectile.owner, fighter) : fighter.team !== projectile.team));
+        const target = targets.sort((a, b) => Math.hypot(a.x - projectile.x, a.y - projectile.y) - Math.hypot(b.x - projectile.x, b.y - projectile.y))[0];
+        if (!target) { projectile.active = false; continue; }
 
         projectile.previousX = projectile.x;
         projectile.previousY = projectile.y;
@@ -55,9 +56,12 @@
           projectile.x += projectile.vx * step;
           projectile.y += projectile.vy * step;
           if (this.resolveWall(projectile, bounds)) continue;
-          if (projectile.armTimer > 0 || projectile.hitTargets.has(target.id)) continue;
-          const hit = OA.Collision.segmentCircle(fromX, fromY, projectile.x, projectile.y, target.x, target.y, target.radius + projectile.radius);
-          if (hit) this.hit(world, projectile, target, hit);
+          if (projectile.armTimer > 0) continue;
+          for (const candidate of targets) {
+            if (!projectile.active || projectile.hitTargets.has(candidate.id)) continue;
+            const hit = OA.Collision.segmentCircle(fromX, fromY, projectile.x, projectile.y, candidate.x, candidate.y, candidate.radius + projectile.radius);
+            if (hit) this.hit(world, projectile, candidate, hit);
+          }
         }
         projectile.rotation = Math.atan2(projectile.vy, projectile.vx);
       }
@@ -126,7 +130,7 @@
     getBounds(world) {
       if (world.arena?.shape === "circle") return { shape: "circle", centerX: world.arena.centerX, centerY: world.arena.centerY, radius: world.arena.radius };
       const padding = (world.arena?.padding ?? OA.CONFIG.arena.padding)+(world.arena?.inset||0);
-      return { left: padding, right: OA.CONFIG.arena.width - padding, top: padding, bottom: OA.CONFIG.arena.height - padding };
+      return { left: padding, right: (world.arena?.width || OA.CONFIG.arena.width) - padding, top: padding, bottom: (world.arena?.height || OA.CONFIG.arena.height) - padding };
     }
 
     get activeCount() { return this.pool.reduce((total, projectile) => total + (projectile.active ? 1 : 0), 0); }
