@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#05080f">
+  <meta name="description" content="ORB ARENA: CHAOS PROTOCOL — simulador de batalhas automáticas entre combatentes orbitais.">
+  <meta name="author" content="Duke Dandalian">
+  <title>ORB ARENA: CHAOS PROTOCOL</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/menu.css">
+  <link rel="stylesheet" href="css/battle.css">
+  <link rel="stylesheet" href="css/characters.css">
+  <link rel="stylesheet" href="css/expansion.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/modules.css">
+</head>
+<body>
+  <div class="app-shell" id="app">
+    <div class="ambient-grid" aria-hidden="true"></div>
+    <div class="scanline" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <button class="brand-mini" type="button" data-go-home aria-label="Voltar ao menu">
+        <span class="brand-orbit" aria-hidden="true"><i></i></span>
+        <span>ORB <b>ARENA</b></span>
+      </button>
+      <nav class="top-navigation" aria-label="Navegação principal">
+        <button type="button" data-top-screen="menu">Jogar</button><button type="button" data-top-screen="build">Build</button><button type="button" data-top-screen="builds">Salvas</button><button type="button" data-top-screen="history">Histórico</button><button type="button" data-top-screen="arsenal">Arsenal</button><button type="button" data-top-screen="perks">Perks</button><button type="button" data-top-screen="abilities">Habilidades</button><button type="button" data-top-screen="bestiary">Bestiário</button><button type="button" data-top-screen="settings">Configurações</button>
+      </nav>
+      <div class="protocol-status"><i></i> PROTOCOLO ONLINE</div>
+      <button class="icon-button" id="audio-toggle" type="button" aria-label="Alternar áudio" title="Áudio">
+        <span aria-hidden="true">◖))</span>
+      </button>
+    </header>
+
+    <main class="screen-stack">
+      <section class="screen active" id="screen-menu" aria-labelledby="menu-title">
+        <div class="menu-layout">
+          <aside class="menu-rail panel">
+            <div class="rail-label">NAVEGAÇÃO</div>
+            <nav id="main-nav" aria-label="Menu principal">
+              <button class="nav-item active" type="button" data-section="inicio"><span>01</span> Início</button>
+              <button class="nav-item" type="button" data-action="play"><span>02</span> Jogar</button>
+              <button class="nav-item" type="button" data-action="quick"><span>03</span> Batalha rápida</button>
+              <button class="nav-item" type="button" data-module-screen="build" title="III indica profundidade do módulo"><span>04</span> Criar build <em>III</em></button>
+              <button class="nav-item" type="button" data-module-screen="builds" title="V indica profundidade do módulo"><span>05</span> Builds salvas <em>V</em></button>
+              <button class="nav-item" type="button" data-module-screen="history" title="V indica profundidade do módulo"><span>06</span> Histórico <em>V</em></button>
+            </nav>
+            <div class="rail-separator"></div>
+            <nav aria-label="Compêndio">
+              <button class="nav-item" type="button" data-module-screen="arsenal" title="II indica profundidade do módulo"><span>07</span> Arsenal <em>II</em></button>
+              <button class="nav-item" type="button" data-module-screen="perks" title="III indica profundidade do módulo"><span>08</span> Perks <em>III</em></button>
+              <button class="nav-item" type="button" data-module-screen="abilities" title="III indica profundidade do módulo"><span>09</span> Habilidades <em>III</em></button>
+              <button class="nav-item" type="button" data-module-screen="bestiary" title="IV indica profundidade do módulo"><span>10</span> Bestiário <em>IV</em></button>
+            </nav>
+            <div class="rail-footer">
+              <button class="text-button" type="button" data-modal="roadmap">Roteiro do projeto</button>
+              <button class="text-button" type="button" data-modal="credits">Créditos</button>
+            </div>
+          </aside>
+
+          <div class="menu-content">
+            <div class="eyebrow"><span></span> SIMULAÇÃO TÁTICA AUTÔNOMA</div>
+            <div class="hero-lockup">
+              <div>
+                <h1 id="menu-title">ORB ARENA</h1>
+                <p class="hero-subtitle">CHAOS <b>PROTOCOL</b></p>
+              </div>
+              <div class="hero-orb" aria-hidden="true">
+                <div class="orb-ring ring-a"></div>
+                <div class="orb-ring ring-b"></div>
+                <div class="orb-core"></div>
+              </div>
+            </div>
+            <p class="hero-copy">Construa o combatente. Inicie o protocolo. Assista ao caos decidir quem merece permanecer em órbita.</p>
+
+            <div class="primary-actions">
+              <button class="button button-primary button-large" id="play-button" type="button">
+                <span>CONFIGURAR COMBATENTE</span><b>→</b>
+              </button>
+              <button class="button button-secondary" id="quick-button" type="button">
+                <span class="dice" aria-hidden="true">✦</span> BATALHA RÁPIDA
+              </button>
+            </div>
+
+            <div class="menu-lower-grid">
+              <article class="status-card panel">
+                <div class="card-kicker">REGISTRO LOCAL</div>
+                <div class="record-stats">
+                  <div><strong id="record-battles">0</strong><span>Batalhas</span></div>
+                  <div><strong id="record-wins">0</strong><span>Vitórias</span></div>
+                  <div><strong id="record-rate">—</strong><span>Taxa de vitória</span></div>
+                </div>
+              </article>
+              <article class="stage-card panel">
+                <div class="stage-head"><span>ETAPA ATUAL</span><b>10 / 10</b></div>
+                <h2>ARQUIVOS & BUILDS</h2>
+                <p>Arena retangular clássica, 110 personagens, builds persistentes, catálogos e Bestiário.</p>
+                <div class="progress-track"><i style="width: 100%"></i></div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen" id="screen-characters" aria-labelledby="characters-title"><div class="characters-page">
+        <header class="characters-head"><button class="back-button" type="button" data-go-home>← MENU</button><div><span class="eyebrow">ARQUIVO DE COMBATENTES</span><h1 id="characters-title">CHARACTER BALLS <b>110</b></h1></div><button class="button button-secondary" id="random-character" type="button">ALEATÓRIO</button></header>
+        <div class="arena-showcase panel"><aside><small>ARENA PRINCIPAL</small><h2>ARENA CLÁSSICA</h2><p>Retangular · quatro paredes físicas · ricochetes fortes</p><div class="arena-chips"><span>Wall Boost</span><span>Física arcade</span><span>Leitura rápida</span></div></aside><canvas id="arena-preview-canvas" width="680" height="180" aria-label="Prévia leve da arena retangular"></canvas><div class="featured-balls"><small>DESTAQUES</small><div id="featured-characters"></div></div></div>
+        <div class="character-browser">
+          <aside class="character-tools panel" id="character-filters"><h2>FILTROS</h2><label class="character-search"><span>BUSCAR</span><input id="character-search" type="search" placeholder="Nome, título, poder ou tag…"></label><label><span>CLASSE</span><select id="character-class-filter"><option value="">Todas</option></select></label><label><span>FUNÇÃO</span><select id="character-role-filter"><option value="">Todas</option></select></label><label><span>RARIDADE</span><select id="character-rarity-filter"><option value="">Todas</option></select></label><label><span>ELEMENTO</span><select id="character-element-filter"><option value="">Todos</option></select></label><label><span>TAG</span><select id="character-tag-filter"><option value="">Todas</option></select></label><label><span>DIFICULDADE</span><select id="character-difficulty-filter"><option value="">Todas</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></label><label><span>ESTADO</span><select id="character-unlock-filter"><option value="">Todos</option><option value="unlocked">Desbloqueados</option><option value="locked">Bloqueados</option><option value="recent">Recentes</option></select></label><label><span>ORDENAR</span><select id="character-sort"><option value="name">Nome</option><option value="power">Power Budget</option><option value="health">Vida</option><option value="speed">Velocidade</option><option value="difficulty">Dificuldade</option><option value="rarity">Raridade</option><option value="createdAt">Recentes</option><option value="usage">Mais usados</option><option value="winrate">Win rate</option></select></label><label class="favorite-only"><input id="character-favorite-filter" type="checkbox"> Só favoritos</label><button type="button" class="text-button" id="clear-character-filters">Limpar filtros</button></aside>
+          <main class="character-results"><div class="character-results-head"><div class="character-count" id="character-count"></div><button type="button" id="mobile-filter-button">FILTROS</button></div><div class="character-grid" id="character-grid"></div><nav class="character-pagination" aria-label="Paginação de personagens"><button type="button" id="character-prev">←</button><span id="character-page-label">1 / 1</span><button type="button" id="character-next">→</button><select id="character-page-size"><option value="18">18 por página</option><option value="24" selected>24 por página</option><option value="36">36 por página</option></select></nav></main>
+          <aside class="character-preview panel" id="character-preview"></aside>
+        </div>
+        <details class="simulation-lab panel"><summary>LABORATÓRIO DE BALANCEAMENTO</summary><div><select id="simulation-opponent"></select><input id="simulation-count" type="number" min="1" max="10000" value="100" aria-label="Quantidade personalizada"><input id="simulation-seed" type="text" value="BALANCE" aria-label="Seed da simulação"><button type="button" id="random-simulation-seed">Nova seed</button><button type="button" data-sim="10">10</button><button type="button" data-sim="100">100</button><button type="button" data-sim="1000">1.000</button><button type="button" data-sim="custom">Executar</button><button type="button" data-sim="all">Todos × todos</button><button type="button" id="export-simulation">Exportar</button><output id="simulation-output">Selecione um personagem para auditar.</output></div></details>
+      </div></section>
+
+      <section class="screen" id="screen-powers" aria-labelledby="powers-title"><div class="library-page"><header class="library-head"><button class="back-button" type="button" data-go-home>← MENU</button><div><span class="eyebrow">BANCO DE TECNOLOGIAS</span><h1 id="powers-title">PODERES <b>50 NOVOS</b></h1></div></header><div class="library-tools panel"><input id="power-search" type="search" placeholder="Buscar poder…"><select id="power-category-filter"><option value="">Todas as categorias</option></select><select id="power-type-filter"><option value="">Todos os tipos</option></select><select id="power-rarity-filter"><option value="">Todas as raridades</option></select></div><div class="power-grid" id="power-grid"></div></div></section>
+
+      <section class="screen" id="screen-settings" aria-labelledby="settings-title"><div class="settings-page"><header class="library-head"><button class="back-button" type="button" data-go-home>← MENU</button><div><span class="eyebrow">PREFERÊNCIAS LOCAIS</span><h1 id="settings-title">CONFIGURAÇÕES</h1></div></header><div class="settings-grid"><section class="panel"><h2>QUALIDADE GRÁFICA</h2><label>Preset<select id="graphics-quality"><option value="low">Baixo</option><option value="medium">Médio</option><option value="high" selected>Alto</option><option value="ultra">Ultra</option></select></label><label><input type="checkbox" data-setting="trails" checked> Trilhas</label><label><input type="checkbox" data-setting="glow" checked> Glow</label><label><input type="checkbox" data-setting="animatedBackground" checked> Fundo animado</label><label><input type="checkbox" data-setting="arenaPreview" checked> Prévia da arena</label></section><section class="panel"><h2>ACESSIBILIDADE</h2><label><input type="checkbox" data-setting="reducedMotion"> Reduzir movimento</label><label><input type="checkbox" data-setting="reducedParticles"> Reduzir partículas</label><label><input type="checkbox" data-setting="screenShake"> Screen shake</label><label><input type="checkbox" data-setting="highContrast"> Alto contraste</label><label><input type="checkbox" data-setting="largeText"> Textos maiores</label><label><input type="checkbox" data-setting="reducedFlashes"> Reduzir flashes</label><label>Daltonismo<select id="colorblind-mode"><option value="none">Desativado</option><option value="deuteranopia">Deuteranopia</option><option value="protanopia">Protanopia</option><option value="tritanopia">Tritanopia</option></select></label><label>Escala da interface<input id="ui-scale" type="range" min=".85" max="1.2" value="1" step=".05"></label></section></div></div></section>
+
+      <section class="screen" id="screen-setup" aria-labelledby="setup-title">
+        <div class="page-heading">
+          <button class="back-button" type="button" data-go-home>← MENU</button>
+          <div><div class="eyebrow"><span></span> HANGAR DE CONFIGURAÇÃO</div><h1 id="setup-title">PREPARE SEU ORBE</h1></div>
+          <div class="step-chip">PROTOCOLO <b>01</b></div>
+        </div>
+
+        <div class="setup-grid">
+          <form class="config-panel panel" id="fighter-form">
+            <div class="panel-title"><span>IDENTIDADE</span><small>PARÂMETROS DO COMBATENTE</small></div>
+            <label class="field full-field">
+              <span>Nome de combate</span>
+              <input id="fighter-name" name="name" type="text" maxlength="18" value="NEXUS-7" autocomplete="off">
+            </label>
+            <div class="field-row">
+              <label class="field color-field"><span>Núcleo</span><input id="fighter-color" name="color" type="color" value="#39e7ff"></label>
+              <label class="field color-field"><span>Contorno</span><input id="fighter-stroke" name="stroke" type="color" value="#b9f8ff"></label>
+              <label class="field color-field"><span>Trilha</span><input id="fighter-trail" name="trail" type="color" value="#6a7cff"></label>
+            </div>
+
+            <div class="panel-title section-title"><span>CHASSI</span><small>ESCOLHA UM PERFIL EQUILIBRADO</small></div>
+            <div class="preset-grid" role="radiogroup" aria-label="Perfil do combatente">
+              <label class="preset-card selected"><input type="radio" name="preset" value="balanced" checked><span class="preset-icon">◇</span><b>VANGUARDA</b><small>Equilíbrio</small></label>
+              <label class="preset-card"><input type="radio" name="preset" value="striker"><span class="preset-icon">⌁</span><b>VÉRTICE</b><small>Velocidade</small></label>
+              <label class="preset-card"><input type="radio" name="preset" value="tank"><span class="preset-icon">⬡</span><b>BASTIÃO</b><small>Resistência</small></label>
+            </div>
+
+            <div class="stat-preview" id="stat-preview">
+              <div><span>VIDA</span><i><b data-stat-bar="health"></b></i><strong data-stat="health">120</strong></div>
+              <div><span>DANO</span><i><b data-stat-bar="damage"></b></i><strong data-stat="damage">16</strong></div>
+              <div><span>VELOCIDADE</span><i><b data-stat-bar="speed"></b></i><strong data-stat="speed">235</strong></div>
+              <div><span>MASSA</span><i><b data-stat-bar="mass"></b></i><strong data-stat="mass">1.0</strong></div>
+            </div>
+
+            <div class="panel-title section-title"><span>FÍSICA AVANÇADA</span><small>AJUSTE O COMPORTAMENTO DA ARENA</small></div>
+            <label class="field full-field"><span>Arena</span><select id="arena-select"><option value="classic" selected>Arena Clássica · retangular</option><option value="reactor">Círculo do Reator · alternativo</option><option value="forge">Forja Orbital · alternativo</option><option value="sanctum">Santuário Abissal · alternativo</option></select></label>
+            <label class="field full-field"><span>Preset físico</span>
+              <select id="physics-preset">
+                <option value="arcade">Arcade</option><option value="realistic">Realista</option><option value="chaotic">Caótico</option>
+                <option value="superfast">Super rápido</option><option value="heavy">Pesado</option><option value="frictionless">Sem atrito</option>
+                <option value="pinball" selected>PINBALL CHAOS</option><option value="cinematic">Cinemático</option>
+              </select>
+            </label>
+            <details class="physics-settings">
+              <summary>CONFIGURAÇÃO MANUAL <span>15 PARÂMETROS</span></summary>
+              <div class="physics-grid">
+                <label><span>Gravidade <output data-output="gravity">0</output></span><input type="range" data-physics="gravity" min="-80" max="80" step="1"></label>
+                <label><span>Atrito <output data-output="friction">0.02</output></span><input type="range" data-physics="friction" min="0" max="0.35" step="0.005"></label>
+                <label><span>Elasticidade <output data-output="globalElasticity">1.08</output></span><input type="range" data-physics="globalElasticity" min="0.75" max="1.15" step="0.01"></label>
+                <label><span>Retenção <output data-output="energyRetention">1.03</output></span><input type="range" data-physics="energyRetention" min="0.85" max="1.08" step="0.005"></label>
+                <label><span>Ricochete <output data-output="bounceMultiplier">1.13</output></span><input type="range" data-physics="bounceMultiplier" min="0.9" max="1.18" step="0.01"></label>
+                <label><span>Repulsão <output data-output="repulsion">1.72</output></span><input type="range" data-physics="repulsion" min="0.6" max="1.9" step="0.02"></label>
+                <label><span>Dano colisão <output data-output="collisionDamage">0.046</output></span><input type="range" data-physics="collisionDamage" min="0.015" max="0.065" step="0.001"></label>
+                <label><span>Knockback <output data-output="knockback">1.62</output></span><input type="range" data-physics="knockback" min="0.6" max="1.8" step="0.02"></label>
+                <label><span>Vel. mínima <output data-output="minSpeed">205</output></span><input type="range" data-physics="minSpeed" min="70" max="240" step="5"></label>
+                <label><span>Vel. máxima <output data-output="maxSpeed">960</output></span><input type="range" data-physics="maxSpeed" min="450" max="1050" step="10"></label>
+                <label><span>Aceleração <output data-output="acceleration">1.20</output></span><input type="range" data-physics="acceleration" min="0.6" max="1.5" step="0.02"></label>
+                <label><span>Substeps <output data-output="maxSubsteps">8</output></span><input type="range" data-physics="maxSubsteps" min="1" max="8" step="1"></label>
+                <label><span>Wall Boost <output data-output="wallBoost">1.20</output></span><input type="range" data-physics="wallBoost" min="1" max="1.25" step="0.01"></label>
+                <label><span>Câmera <output data-output="camera">1.00</output></span><input type="range" data-physics="camera" min="0" max="1.5" step="0.05"></label>
+                <label><span>Partículas <output data-output="particles">1.45</output></span><input type="range" data-physics="particles" min="0.5" max="1.5" step="0.05"></label>
+              </div>
+            </details>
+          </form>
+
+          <aside class="mission-panel">
+            <article class="orb-preview panel">
+              <div class="preview-grid" aria-hidden="true"></div>
+              <div class="preview-orb" id="preview-orb" aria-hidden="true"><i></i></div>
+              <span>VISUALIZAÇÃO DO NÚCLEO</span>
+            </article>
+            <article class="match-panel panel">
+              <div class="panel-title"><span>PROTOCOLO DE PARTIDA</span><small>SEED REPRODUZÍVEL</small></div>
+              <label class="field full-field"><span>Seed</span><div class="input-action"><input id="seed-input" type="text" maxlength="24" value=""><button id="random-seed" type="button" aria-label="Gerar nova seed">↻</button></div></label>
+              <label class="field full-field"><span>Dificuldade</span><select id="difficulty-select"><option value="easy">Fácil</option><option value="normal" selected>Normal</option><option value="hard">Difícil</option></select></label>
+              <div class="random-loadout"><span>LOADOUT PROCEDURAL</span><p>1 arma física · kit de personagem · 3 poderes · 1 reativo · 3 perks</p><small>110 personagens, 120 habilidades e 12 armas disponíveis.</small></div>
+              <div class="threat-row"><span>Battle Score</span><strong id="battle-score">342</strong></div>
+              <button class="button button-primary button-full" id="launch-button" type="button"><span>INICIAR BATALHA</span><b>→</b></button>
+              <p class="match-note">O adversário será sintetizado com poder próximo ao seu perfil.</p>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section class="screen battle-screen" id="screen-battle" aria-labelledby="battle-title">
+        <h1 class="sr-only" id="battle-title">Batalha em andamento</h1>
+        <div class="battle-topline">
+          <button class="back-button" id="battle-exit" type="button">← ABORTAR</button>
+          <div class="battle-meta"><span id="battle-mode">DUELO // NORMAL</span><b id="battle-seed">SEED —</b></div>
+          <div class="battle-clock"><small>TEMPO</small><strong id="battle-timer">00:00.0</strong></div>
+        </div>
+
+        <div class="versus-hud">
+          <article class="fighter-hud player-hud">
+            <div class="hud-ident"><span class="hud-dot" id="player-dot"></span><div><small>JOGADOR</small><strong id="player-name-hud">NEXUS-7</strong></div><b id="player-hp-text">120 / 120</b></div>
+            <div class="health-track"><i id="player-health-bar"></i></div>
+          </article>
+          <div class="versus-mark">VS</div>
+          <article class="fighter-hud enemy-hud">
+            <div class="hud-ident"><span class="hud-dot" id="enemy-dot"></span><div><small>HOSTIL</small><strong id="enemy-name-hud">UNKNOWN</strong></div><b id="enemy-hp-text">—</b></div>
+            <div class="health-track"><i id="enemy-health-bar"></i></div>
+          </article>
+        </div>
+
+        <div class="battle-loadouts">
+          <div><strong id="player-weapon">—</strong><span id="player-abilities">—</span></div>
+          <b id="intensity-indicator">INTENSIDADE I</b>
+          <div><strong id="enemy-weapon">—</strong><span id="enemy-abilities">—</span></div>
+        </div>
+
+        <div class="arena-shell">
+          <canvas id="arena-canvas" width="960" height="540" aria-label="Arena de batalha automática"></canvas>
+          <div class="arena-corner corner-tl"></div><div class="arena-corner corner-tr"></div>
+          <div class="arena-corner corner-bl"></div><div class="arena-corner corner-br"></div>
+          <div class="countdown" id="countdown" aria-live="assertive"></div>
+          <div class="paused-overlay" id="paused-overlay"><span>SIMULAÇÃO SUSPENSA</span><small>Pressione espaço para continuar</small></div>
+          <div class="debug-panel" id="debug-panel" aria-live="polite"></div>
+          <div class="combo-banner player-combo" id="player-combo"></div>
+          <div class="combo-banner enemy-combo" id="enemy-combo"></div>
+        </div>
+
+        <div class="battle-controls panel">
+          <div class="control-group">
+            <button class="control-button" id="pause-button" type="button"><span>Ⅱ</span> PAUSAR</button>
+            <button class="control-button" id="restart-button" type="button"><span>↻</span> REINICIAR</button>
+          </div>
+          <div class="speed-controls" aria-label="Velocidade da batalha">
+            <span>VELOCIDADE</span>
+            <button type="button" data-speed="0.5">0,5×</button><button class="active" type="button" data-speed="1">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="4">4×</button>
+          </div>
+          <div class="control-group right-controls">
+            <button class="control-button" id="hitbox-button" type="button">◎ HITBOXES</button>
+            <button class="control-button" id="debug-button" type="button">⌘ DEBUG</button>
+          </div>
+        </div>
+        <div class="character-lab panel" id="character-lab" hidden><b>CHARACTER LAB</b><button data-lab="heal">Curar</button><button data-lab="selfDamage">Dano próprio</button><button data-lab="targetDamage">Dano no alvo</button><button data-lab="reset">Resetar recargas</button><button data-lab="ultimate">Ultimate</button><button data-lab="clone">Clone</button><button data-lab="projectiles">Projéteis</button><button data-lab="status">Status no alvo</button><button data-lab="time">Tempo</button></div>
+      </section>
+
+      <section class="screen" id="screen-results" aria-labelledby="results-title">
+        <div class="results-wrap">
+          <div class="result-sigil" id="result-sigil" aria-hidden="true"><i></i></div>
+          <div class="eyebrow centered"><span></span> RELATÓRIO PÓS-COMBATE <span></span></div>
+          <h1 id="results-title">VITÓRIA</h1>
+          <p class="result-subtitle" id="result-subtitle">O protocolo confirmou sua superioridade.</p>
+
+          <div class="result-summary panel">
+            <div class="result-duel">
+              <div><span class="result-orb" id="result-player-orb"></span><small>JOGADOR</small><strong id="result-player-name">NEXUS-7</strong></div>
+              <b>×</b>
+              <div><span class="result-orb" id="result-enemy-orb"></span><small>HOSTIL</small><strong id="result-enemy-name">UNKNOWN</strong></div>
+            </div>
+            <div class="result-stats">
+              <div><small>DURAÇÃO</small><strong id="result-duration">—</strong></div>
+              <div><small>DANO CAUSADO</small><strong id="result-damage">—</strong></div>
+              <div><small>DANO RECEBIDO</small><strong id="result-received">—</strong></div>
+              <div><small>MAIOR IMPACTO</small><strong id="result-largest">—</strong></div>
+              <div><small>IMPACTOS</small><strong id="result-hits">—</strong></div>
+              <div><small>DISTÂNCIA</small><strong id="result-distance">—</strong></div>
+              <div><small>COLISÕES</small><strong id="result-collisions">—</strong></div>
+              <div><small>VELOCIDADE MÁX.</small><strong id="result-max-speed">—</strong></div>
+              <div><small>WALL BOOSTS</small><strong id="result-wall-boosts">—</strong></div>
+              <div><small>KNOCKBACK</small><strong id="result-knockback">—</strong></div>
+              <div><small>DANO DE ARMA</small><strong id="result-weapon-damage">—</strong></div>
+              <div><small>DANO DE PODER</small><strong id="result-ability-damage">—</strong></div>
+              <div><small>MAIOR COMBO</small><strong id="result-combo">—</strong></div>
+              <div><small>PODER MAIS USADO</small><strong id="result-power">—</strong></div>
+              <div><small>PRESET FÍSICO</small><strong id="result-physics">—</strong></div>
+              <div><small>DANO DA ATIVA</small><strong id="result-character-active">—</strong></div>
+              <div><small>DANO DA ULTIMATE</small><strong id="result-character-ultimate">—</strong></div>
+              <div><small>CLONES / INVOCAÇÕES</small><strong id="result-character-entities">—</strong></div>
+              <div><small>CURA / ESCUDO</small><strong id="result-character-sustain">—</strong></div>
+              <div><small>CONTROLE</small><strong id="result-character-control">—</strong></div>
+            </div>
+            <div class="seed-result"><span>SEED DA PARTIDA</span><code id="result-seed">—</code><button id="copy-seed" type="button">COPIAR</button></div>
+          </div>
+          <div class="result-actions">
+            <button class="button button-secondary" id="result-menu" type="button">VOLTAR AO MENU</button>
+            <button class="button button-secondary" id="new-enemy" type="button">NOVO INIMIGO</button>
+            <button class="button button-primary" id="rematch-button" type="button">REVANCHE <b>→</b></button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+    <dialog class="info-modal" id="info-modal">
+      <button class="modal-close" type="button" aria-label="Fechar">×</button>
+      <div id="modal-content"></div>
+    </dialog>
+  </div>
+
+  <script defer src="js/config.js"></script>
+  <script defer src="js/state.js"></script>
+  <script defer src="js/storage.js"></script>
+  <script defer src="js/engine/vector.js"></script>
+  <script defer src="js/engine/random.js"></script>
+  <script defer src="js/data/characterClasses.js"></script>
+  <script defer src="js/data/characterRarities.js"></script>
+  <script defer src="js/data/characterTags.js"></script>
+  <script defer src="js/data/characterBalance.js"></script>
+  <script defer src="js/characters/CharacterBase.js"></script>
+  <script defer src="js/characters/CharacterRegistry.js"></script>
+  <script defer src="js/powers/PowerRegistry.js"></script>
+  <script defer src="js/powers/temporalPowers.js"></script>
+  <script defer src="js/powers/clonePoisonPowers.js"></script>
+  <script defer src="js/powers/kineticDefensivePowers.js"></script>
+  <script defer src="js/powers/gravityElementalPowers.js"></script>
+  <script defer src="js/powers/arenaChaosPowers.js"></script>
+  <script defer src="js/data/charactersAlpha.js"></script>
+  <script defer src="js/data/charactersBeta.js"></script>
+  <script defer src="js/data/charactersGamma.js"></script>
+  <script defer src="js/data/charactersDelta.js"></script>
+  <script defer src="js/data/charactersEpsilon.js"></script>
+  <script defer src="js/characters/CharacterAI.js"></script>
+  <script defer src="js/data/physicsPresets.js"></script>
+  <script defer src="js/data/arenaDefinitions.js"></script>
+  <script defer src="js/data/weapons.js"></script>
+  <script defer src="js/data/perks.js"></script>
+  <script defer src="js/data/abilities.js"></script>
+  <script defer src="js/data/catalogMetadata.js"></script>
+  <script defer src="js/entities/fighter.js"></script>
+  <script defer src="js/entities/projectile.js"></script>
+  <script defer src="js/characters/CharacterFactory.js"></script>
+  <script defer src="js/characters/CharacterMechanics.js"></script>
+  <script defer src="js/abilities/summonAbilities.js"></script>
+  <script defer src="js/abilities/temporalAbilities.js"></script>
+  <script defer src="js/abilities/elementalAbilities.js"></script>
+  <script defer src="js/abilities/controlAbilities.js"></script>
+  <script defer src="js/abilities/defensiveAbilities.js"></script>
+  <script defer src="js/abilities/offensiveAbilities.js"></script>
+  <script defer src="js/abilities/chaosAbilities.js"></script>
+  <script defer src="js/abilities/expansionCharacterAbilities.js"></script>
+  <script defer src="js/engine/collision.js"></script>
+  <script defer src="js/engine/particles.js"></script>
+  <script defer src="js/engine/audio.js"></script>
+  <script defer src="js/systems/battleLogger.js"></script>
+  <script defer src="js/systems/combatSystem.js"></script>
+  <script defer src="js/systems/projectileSystem.js"></script>
+  <script defer src="js/systems/weaponSystem.js"></script>
+  <script defer src="js/systems/perkSystem.js"></script>
+  <script defer src="js/systems/comboSystem.js"></script>
+  <script defer src="js/systems/arenaSystem.js"></script>
+  <script defer src="js/systems/abilitySystem.js"></script>
+  <script defer src="js/systems/characterBalanceSystem.js"></script>
+  <script defer src="js/systems/matchupSystem.js"></script>
+  <script defer src="js/systems/characterUnlockSystem.js"></script>
+  <script defer src="js/systems/characterStatsSystem.js"></script>
+  <script defer src="js/systems/characterSimulationSystem.js"></script>
+  <script defer src="js/systems/timeSystem.js"></script>
+  <script defer src="js/systems/summonSystem.js"></script>
+  <script defer src="js/systems/cloneSystem.js"></script>
+  <script defer src="js/systems/poisonSystem.js"></script>
+  <script defer src="js/systems/spikeSystem.js"></script>
+  <script defer src="js/systems/powerSystem.js"></script>
+  <script defer src="js/systems/characterSystem.js"></script>
+  <script defer src="js/systems/contentValidationSystem.js"></script>
+  <script defer src="js/systems/buildSystem.js"></script>
+  <script defer src="js/systems/progressionSystem.js"></script>
+  <script defer src="js/engine/physics.js"></script>
+  <script defer src="js/engine/renderer.js"></script>
+  <script defer src="js/engine/gameLoop.js"></script>
+  <script defer src="js/ui/menuUI.js"></script>
+  <script defer src="js/ui/characterSelectUI.js"></script>
+  <script defer src="js/ui/rectangularPreview.js"></script>
+  <script defer src="js/ui/powerLibraryUI.js"></script>
+  <script defer src="js/ui/settingsUI.js"></script>
+  <script defer src="js/ui/battleUI.js"></script>
+  <script defer src="js/ui/resultsUI.js"></script>
+  <script defer src="js/ui/buildUI.js"></script>
+  <script defer src="js/ui/archiveUI.js"></script>
+  <script defer src="js/ui/catalogUI.js"></script>
+  <script defer src="js/ui/bestiaryUI.js"></script>
+  <script defer src="js/game.js"></script>
+  <script defer src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+.battle-screen { padding-left: clamp(14px, 2.6vw, 44px); padding-right: clamp(14px, 2.6vw, 44px); }
+.battle-topline { max-width: 1280px; margin: 0 auto 13px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.battle-meta { display: flex; gap: 14px; align-items: center; color: var(--muted); font: 700 8px var(--body); letter-spacing: .14em; }
+.battle-meta b { color: var(--dim); font-weight: 600; }
+.battle-clock { justify-self: end; display: flex; gap: 10px; align-items: baseline; }
+.battle-clock small { color: var(--dim); font: 700 8px var(--body); letter-spacing: .13em; }
+.battle-clock strong { font: 700 20px var(--display); letter-spacing: .08em; }
+.versus-hud { max-width: 1280px; margin: 0 auto 10px; display: grid; grid-template-columns: 1fr 46px 1fr; align-items: center; }
+.fighter-hud { min-width: 0; }
+.hud-ident { padding: 0 4px 7px; display: grid; grid-template-columns: 25px 1fr auto; align-items: center; gap: 9px; }
+.enemy-hud .hud-ident { grid-template-columns: 25px 1fr auto; }
+.hud-dot { width: 18px; height: 18px; border: 2px solid white; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 12px currentColor; }
+.hud-ident > div { display: grid; }
+.hud-ident small { color: var(--dim); font: 700 7px var(--body); letter-spacing: .15em; }
+.hud-ident strong { overflow: hidden; text-overflow: ellipsis; font: 800 16px var(--display); letter-spacing: .08em; }
+.hud-ident > b { color: #b9f5ff; font: 700 12px var(--display); }
+.health-track { height: 9px; padding: 2px; border: 1px solid rgba(134,193,216,.25); background: rgba(3,7,12,.8); }
+.health-track i { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #1fa4be, var(--cyan)); box-shadow: 0 0 10px rgba(68,231,244,.4); transition: width .18s; }
+.enemy-hud .health-track i { margin-left: auto; background: linear-gradient(90deg, #ff6c91, #9652ff); box-shadow: 0 0 10px rgba(255,82,119,.35); }
+.versus-mark { text-align: center; color: #52697b; font: italic 800 19px var(--display); }
+.battle-loadouts { width: min(1280px,100%); margin: 0 auto 8px; display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; }
+.battle-loadouts > div { min-width: 0; display: flex; gap: 9px; align-items: center; overflow: hidden; }
+.battle-loadouts > div:last-child { flex-direction: row-reverse; text-align: right; }
+.battle-loadouts strong { flex: 0 0 auto; color: var(--cyan-soft); font: 700 10px var(--display); letter-spacing: .08em; }
+.battle-loadouts > div:last-child strong { color: #ff9ebb; }
+.battle-loadouts span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dim); font-size: 7px; }
+.battle-loadouts > b { color: #caa9ff; font: 700 8px var(--body); letter-spacing: .12em; }
+
+.arena-shell { position: relative; width: min(1280px, 100%); margin: 0 auto; aspect-ratio: 16/9; max-height: calc(100vh - 285px); min-height: 270px; border: 1px solid rgba(96,206,229,.35); background: #050b13; box-shadow: 0 0 0 6px rgba(5,12,20,.7), 0 25px 70px rgba(0,0,0,.5), inset 0 0 80px rgba(18,87,112,.08); overflow: hidden; }
+#arena-canvas { display: block; width: 100%; height: 100%; }
+.arena-corner { position: absolute; width: 17px; height: 17px; pointer-events: none; border-color: var(--cyan); }
+.corner-tl { left: 7px; top: 7px; border-left: 2px solid; border-top: 2px solid; }
+.corner-tr { right: 7px; top: 7px; border-right: 2px solid; border-top: 2px solid; }
+.corner-bl { left: 7px; bottom: 7px; border-left: 2px solid; border-bottom: 2px solid; }
+.corner-br { right: 7px; bottom: 7px; border-right: 2px solid; border-bottom: 2px solid; }
+.countdown { position: absolute; inset: 0; display: none; place-items: center; color: var(--cyan-soft); text-shadow: 0 0 35px var(--cyan); font: 900 clamp(72px, 13vw, 160px)/1 var(--display); background: radial-gradient(circle, rgba(7,21,34,.25), rgba(4,8,15,.74)); }
+.countdown.visible { display: grid; }
+.paused-overlay { position: absolute; inset: 0; display: none; place-content: center; text-align: center; background: rgba(3,7,13,.64); backdrop-filter: blur(3px); }
+.paused-overlay.visible { display: grid; }
+.paused-overlay span { color: var(--cyan-soft); font: 800 28px var(--display); letter-spacing: .14em; }
+.paused-overlay small { margin-top: 4px; color: var(--muted); }
+.debug-panel { position: absolute; top: 12px; left: 12px; display: none; min-width: 175px; padding: 10px; border: 1px solid rgba(68,231,244,.3); background: rgba(3,8,14,.82); color: #a4f7ff; white-space: pre; font: 10px/1.6 monospace; pointer-events: none; }
+.debug-panel.visible { display: block; }
+.combo-banner { position: absolute; z-index: 4; bottom: 18px; min-width: 150px; padding: 8px 12px; border: 1px solid rgba(68,231,244,.32); opacity: 0; transform: translateY(8px); background: rgba(5,13,22,.82); color: var(--cyan-soft); font: italic 800 13px var(--display); letter-spacing: .08em; transition: .18s; pointer-events: none; }
+.combo-banner.visible { opacity: 1; transform: translateY(0); }
+.player-combo { left: 18px; }
+.enemy-combo { right: 18px; text-align: right; border-color: rgba(255,104,145,.32); color: #ff9ab7; }
+.battle-controls { width: min(1280px, 100%); min-height: 54px; margin: 12px auto 0; padding: 7px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.control-group { display: flex; gap: 4px; }
+.right-controls { justify-content: flex-end; }
+.control-button, .speed-controls button { min-height: 35px; padding: 0 11px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; font: 700 8px var(--body); letter-spacing: .08em; }
+.control-button:hover, .control-button.active { color: var(--cyan); border-color: var(--line); background: rgba(21,44,59,.35); }
+.control-button span { font-size: 12px; margin-right: 5px; }
+.speed-controls { display: flex; align-items: center; gap: 3px; }
+.speed-controls > span { margin-right: 7px; color: var(--dim); font: 700 7px var(--body); letter-spacing: .1em; }
+.speed-controls button { min-width: 42px; padding: 0 8px; border-color: var(--line); }
+.speed-controls button.active { color: #041016; border-color: var(--cyan); background: var(--cyan); }

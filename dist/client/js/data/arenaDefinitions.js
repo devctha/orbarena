@@ -1,0 +1,6 @@
+(function(){"use strict";const OA=window.OrbArena;OA.ARENA_DEFINITIONS=Object.freeze({
+  classic:{id:"classic",name:"Arena Clássica",type:"Arena retangular",shape:"rectangle",hazards:["bumpers móveis","zonas de aceleração"],modifiers:["Wall Boost","ricochete nas quatro paredes"],colors:{floor:"#08141f",ring:"#3ccad8",core:"#775ee8"}},
+  reactor:{id:"reactor",name:"Círculo do Reator",type:"Arena energética alternativa",shape:"circle",radius:238,innerRadius:70,hazards:["núcleo energético","plataformas orbitais"],modifiers:["Wall Boost","power-ups"],colors:{floor:"#08141f",ring:"#3ccad8",core:"#775ee8"}},
+  forge:{id:"forge",name:"Forja Orbital",type:"Arena industrial alternativa",shape:"circle",radius:232,innerRadius:62,hazards:["calor central","paredes móveis"],modifiers:["impacto elevado"],colors:{floor:"#151117",ring:"#d7894f",core:"#d25842"}},
+  sanctum:{id:"sanctum",name:"Santuário Abissal",type:"Arena ancestral alternativa",shape:"circle",radius:242,innerRadius:76,hazards:["névoa","portais"],modifiers:["gravidade variável"],colors:{floor:"#0d101b",ring:"#6977c9",core:"#7656b6"}}
+});OA.getArenaDefinition=(id="classic")=>structuredClone(OA.ARENA_DEFINITIONS[id]||OA.ARENA_DEFINITIONS.classic);}());
