@@ -24,7 +24,7 @@
     }
 
     process(world, events) {
-      const valid = new Set(["wall", "collision", "weapon", "projectile", "ability"]);
+      const valid = new Set(["wall", "wallBoost", "collision", "weapon", "projectile", "ability", "criticalTaken", "powerUp", "burstProtection", "secondChance"]);
       for (const event of events) {
         if (!valid.has(event.type) || !event.fighter?.alive) continue;
         const fighter = event.fighter;
@@ -42,6 +42,11 @@
         else if (types.slice(-2).join("-") === "ability-collision") label = "POWER CRASH";
         else if (types.slice(-2).join("-") === "projectile-collision") label = "CROSS IMPACT";
         else if (types.slice(-3).every((type) => type === "collision")) label = "TRIPLE CRASH";
+        else if(types.slice(-3).filter(type=>type==="wall"||type==="wallBoost").length>=2)label="WALL COMBO";
+        else if(types.slice(-3).filter(type=>type==="projectile").length>=2)label="PROJECTILE COMBO";
+        else if(types.slice(-3).filter(type=>type==="ability").length>=2)label="ABILITY COMBO";
+        else if(types.includes("criticalTaken")&&combo.count>=3)label="CRITICAL CHAIN";
+        else if(types.includes("burstProtection")||types.includes("secondChance"))label="SURVIVAL COMBO";
         if (label && label !== combo.label) {
           combo.label = label;
           fighter.telemetry.combos += 1;

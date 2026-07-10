@@ -34,6 +34,11 @@
       fighter.ai.ultimatePriority = character.ai.ultimatePriority || profile.ability;
       fighter.ai.desiredDistance = character.ai.preferredDistance || fighter.ai.desiredDistance;
       fighter.ai.personality = character.personality;
+      const labels={Agressiva:"Agressivo",Impulsiva:"Agressivo",Cautelosa:"Cauteloso",Covarde:"Fugitivo",Calculista:"Estratégico",Caótica:"Caótico",Predadora:"Predador",Defensiva:"Defensivo",Estratégica:"Estratégico",Oportunista:"Oportunista"};
+      const byClass={Assassino:"Assassino",Tanque:"Tanque",Atirador:"Atirador",Controlador:"Controlador",Invocador:"Invocador",Berserker:"Berserker"};
+      fighter.ai.profile=byClass[character.class]||labels[character.personality]||(character.tags.includes("tempo")?"Temporal":"Estratégico");
+      const fallback={distance:185,attack:1,wall:1,dash:1,ultimate:1,collision:1,retreat:.8,zones:1,lowHealth:1,projectiles:1},cinematic=OA.MOVEMENT_PROFILES?.[fighter.ai.profile]||OA.MOVEMENT_PROFILES?.Estratégico||fallback;
+      fighter.ai.desiredDistance=character.ai.preferredDistance||cinematic.distance;fighter.ai.attackFrequency=cinematic.attack;fighter.ai.wallPreference*=cinematic.wall;fighter.ai.dashPriority=cinematic.dash;fighter.ai.ultimatePriority*=cinematic.ultimate;fighter.ai.collisionPriority=cinematic.collision;fighter.ai.fleeWeight=Math.max(fighter.ai.fleeWeight,cinematic.retreat);fighter.ai.zonePriority*=cinematic.zones;fighter.ai.lowHealthResponse=cinematic.lowHealth;fighter.ai.projectileResponse*=cinematic.projectiles;fighter.ai.faintPhase=(character.id.length*1.618+character.name.charCodeAt(0))%(Math.PI*2);
     }
   }
   OA.CharacterAI = CharacterAI;

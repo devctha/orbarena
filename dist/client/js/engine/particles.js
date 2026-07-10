@@ -1,122 +1,25 @@
-(function () {
+(function(){
   "use strict";
-  const OA = window.OrbArena;
-
-  class ParticleSystem {
-    constructor(random, quality = 1) {
-      this.random = random;
-      this.capacity = Math.round(280 * quality);
-      this.particles = Array.from({ length: this.capacity }, () => ({ active: false }));
-      this.texts = [];
-      this.waves = [];
-      this.lightning = [];
-      this.cursor = 0;
-      this.flash = 0;
-      this.shake = 0;
-    }
-
-    acquire() {
-      const particle = this.particles[this.cursor];
-      this.cursor = (this.cursor + 1) % this.capacity;
-      particle.active = true;
-      return particle;
-    }
-
-    emitImpact(x, y, color, intensity, nx = 0, ny = 0) {
-      const normalized = OA.clamp(intensity / 520, 0.12, 1.5);
-      const count = Math.min(32, Math.round(5 + normalized * 20));
-      const baseAngle = Math.atan2(ny, nx);
-      for (let i = 0; i < count; i += 1) {
-        const directional = nx || ny;
-        const angle = directional ? baseAngle + this.random.range(-1.25, 1.25) : this.random.range(0, Math.PI * 2);
-        const speed = this.random.range(70, 250) * (0.55 + normalized * 0.7);
-        Object.assign(this.acquire(), {
-          type: i % 4 === 0 ? "streak" : "spark", x, y,
-          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-          life: this.random.range(0.16, 0.52), maxLife: 0.52,
-          size: this.random.range(1.2, 4.2) * (0.7 + normalized * 0.35), color
-        });
-      }
-      this.flash = Math.min(1, this.flash + 0.08 + normalized * 0.18);
-      this.shake = Math.min(11, this.shake + normalized * 4.5);
-    }
-
-    emitWallImpact(x, y, color, speed, nx, ny, boosted) {
-      this.emitImpact(x, y, boosted ? "#fff39a" : color, speed * 0.72, nx, ny);
-      if (boosted) {
-        this.emitShockwave(x, y, "#fff39a", 0.72);
-        this.emitText(x, y - 20, "WALL BOOST", "#fff39a", true);
-      }
-    }
-
-    emitShockwave(x, y, color, scale = 1) {
-      this.waves.push({ x, y, color, radius: 5, maxRadius: 62 * scale, life: 0.42, maxLife: 0.42, width: 2 + scale });
-      if (this.waves.length > 24) this.waves.shift();
-    }
-
-    emitAbility(x, y, color, category) {
-      const count = category === "ofensivo" || category === "impacto" ? 18 : 12;
-      for (let i = 0; i < count; i += 1) {
-        const angle = Math.PI * 2 * i / count + this.random.range(-0.1, 0.1);
-        const speed = this.random.range(55, 155);
-        Object.assign(this.acquire(), { type: "spark", x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0.5, maxLife: 0.5, size: this.random.range(1.5, 3.8), color });
-      }
-      this.emitShockwave(x, y, color, category === "caos" ? 1.2 : 0.8);
-    }
-
-    emitLightning(x1, y1, x2, y2, color) {
-      const points = [{ x: x1, y: y1 }];
-      for (let i = 1; i < 8; i += 1) {
-        const t = i / 8;
-        points.push({ x: OA.lerp(x1, x2, t) + this.random.range(-12, 12), y: OA.lerp(y1, y2, t) + this.random.range(-12, 12) });
-      }
-      points.push({ x: x2, y: y2 });
-      this.lightning.push({ points, color, life: 0.16, maxLife: 0.16 });
-    }
-
-    emitDamage(x, y, amount, critical, color) {
-      this.texts.push({ x, y, label: `${critical ? "CRIT " : "−"}${Math.round(amount)}`, critical, color, life: 0.78, maxLife: 0.78 });
-      if (this.texts.length > 26) this.texts.shift();
-    }
-
-    emitText(x, y, label, color, emphasized = false) {
-      this.texts.push({ x, y, label, critical: emphasized, color, life: emphasized ? 1.15 : 0.82, maxLife: emphasized ? 1.15 : 0.82 });
-      if (this.texts.length > 26) this.texts.shift();
-    }
-
-    emitDeath(x, y, color) {
-      for (let i = 0; i < 58; i += 1) {
-        const angle = this.random.range(0, Math.PI * 2);
-        const speed = this.random.range(80, 340);
-        Object.assign(this.acquire(), { type: i % 3 === 0 ? "streak" : "spark", x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: this.random.range(0.45, 1.2), maxLife: 1.2, size: this.random.range(1.5, 6), color });
-      }
-      this.emitShockwave(x, y, color, 2.2);
-      this.flash = 1;
-      this.shake = 13;
-    }
-
-    update(dt) {
-      for (const particle of this.particles) {
-        if (!particle.active) continue;
-        particle.life -= dt;
-        if (particle.life <= 0) { particle.active = false; continue; }
-        particle.x += particle.vx * dt;
-        particle.y += particle.vy * dt;
-        particle.vx *= Math.exp(-5.2 * dt);
-        particle.vy *= Math.exp(-5.2 * dt);
-      }
-      for (const text of this.texts) { text.life -= dt; text.y -= (text.critical ? 42 : 31) * dt; }
-      for (const wave of this.waves) { wave.life -= dt; wave.radius += wave.maxRadius / wave.maxLife * dt; }
-      for (const bolt of this.lightning) bolt.life -= dt;
-      this.texts = this.texts.filter((text) => text.life > 0);
-      this.waves = this.waves.filter((wave) => wave.life > 0);
-      this.lightning = this.lightning.filter((bolt) => bolt.life > 0);
-      this.flash = Math.max(0, this.flash - dt * 4.2);
-      this.shake = Math.max(0, this.shake - dt * 18);
-    }
-
-    get activeCount() { return this.particles.reduce((sum, particle) => sum + (particle.active ? 1 : 0), 0); }
+  const OA=window.OrbArena,CAPS={low:300,medium:700,high:1500,ultra:3000},PRIORITY={decorative:0,low:1,medium:2,high:3,critical:4};
+  OA.PARTICLE_TYPES=Object.freeze(["spark","smoke","fire","ice-shard","poison-droplet","toxic-mist","electric-arc","gravity-dust","time-fragment","blood-particle","metal-fragment","crystal-shard","void-mote","light-particle","shadow-particle","impact-dust","wall-debris","energy-ring","shockwave","rune-fragment","speed-trail","ember","frost-mist","clone-fragment","teleport-particle","healing-mote","shield-fragment","acid-splash","arena-dust","magnetic-spark"]);
+  class ParticleManager{
+    constructor(random,options={}){this.random=random;const quality=typeof options==="string"?options:options.quality||"high";this.capacity=CAPS[quality]||Math.max(300,Math.min(3000,Math.round(700*(Number(options)||1))));this.particles=Array.from({length:this.capacity},()=>({active:false,priority:0,type:"spark"}));this.texts=[];this.waves=[];this.lightning=[];this.decals=[];this.cursor=0;this.flash=0;this.shake=0;this.lod=1;this._active=0;this.emitted=0;this.peak=0;this.typeCounts=Object.create(null);this.typeLimits={spark:.34,smoke:.13,trail:.18,decal:.05,wave:.08,shard:.14,mote:.16};}
+    setLod(value){this.lod=OA.clamp(value,.18,1);}
+    canEmit(type,level){if((PRIORITY[level]??1)>=3)return true;const group=type.includes("smoke")||type.includes("mist")?"smoke":type.includes("trail")?"trail":type.includes("shard")||type.includes("fragment")||type.includes("debris")?"shard":type.includes("mote")||type.includes("dust")||type.includes("particle")?"mote":"spark";return (this.typeCounts[group]||0)<this.capacity*(this.typeLimits[group]||.2)*this.lod;}
+    acquire(type="spark",level="medium"){if(!this.canEmit(type,level))return null;const incoming=PRIORITY[level]??2;let index=-1;for(let offset=0;offset<this.capacity;offset+=1){const candidate=(this.cursor+offset)%this.capacity;if(!this.particles[candidate].active){index=candidate;break;}}if(index<0){for(let offset=0;offset<this.capacity;offset+=1){const candidate=(this.cursor+offset)%this.capacity;if(this.particles[candidate].priority<=incoming){index=candidate;break;}}}if(index<0)return null;const particle=this.particles[index];this.cursor=(index+1)%this.capacity;if(particle.active)this.typeCounts[particle.group]=Math.max(0,(this.typeCounts[particle.group]||1)-1);else this._active+=1;const group=type.includes("smoke")||type.includes("mist")?"smoke":type.includes("trail")?"trail":type.includes("shard")||type.includes("fragment")||type.includes("debris")?"shard":type.includes("mote")||type.includes("dust")||type.includes("particle")?"mote":"spark";particle.active=true;particle.type=type;particle.group=group;particle.priority=incoming;this.typeCounts[group]=(this.typeCounts[group]||0)+1;this.emitted+=1;this.peak=Math.max(this.peak,this._active);return particle;}
+    emitTyped(type,x,y,color,count=10,level="medium",options={}){const total=Math.max(1,Math.round(count*this.lod));for(let i=0;i<total;i+=1){const p=this.acquire(type,level);if(!p)continue;const angle=options.angle!==undefined?options.angle+this.random.range(-(options.spread||1),options.spread||1):this.random.range(0,Math.PI*2),speed=this.random.range(options.minSpeed||35,options.maxSpeed||190);Object.assign(p,{x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:this.random.range(options.minLife||.22,options.maxLife||.75),maxLife:options.maxLife||.75,size:this.random.range(options.minSize||1.2,options.maxSize||4.5),color,gravity:options.gravity||0,drag:options.drag||5.2});}}
+    emitImpact(x,y,color,intensity,nx=0,ny=0){const normalized=OA.clamp(intensity/520,.12,1.5),level=normalized>1?"high":normalized>.55?"medium":"low",count=Math.min(42,Math.round(6+normalized*24)),angle=Math.atan2(ny,nx);this.emitTyped(normalized>.8?"metal-fragment":"spark",x,y,color,count,level,{angle:nx||ny?angle:undefined,spread:1.25,minSpeed:70,maxSpeed:250*(.7+normalized*.5),maxLife:.55,maxSize:4.2});if(normalized>.5)this.emitTyped("impact-dust",x,y,"#9fb0b7",Math.round(count*.32),"low",{minSpeed:20,maxSpeed:85,maxLife:.7,maxSize:6});this.flash=Math.min(1,this.flash+.05+normalized*.12);this.shake=Math.min(9,this.shake+normalized*3.2);}
+    emitWallImpact(x,y,color,speed,nx,ny,boosted){this.emitImpact(x,y,boosted?"#fff39a":color,speed*.72,nx,ny);this.emitTyped("wall-debris",x,y,boosted?"#fff0a0":"#668b98",boosted?20:9,boosted?"high":"medium",{angle:Math.atan2(ny,nx),spread:1.05,minSpeed:55,maxSpeed:220});if(boosted){this.emitShockwave(x,y,"#fff39a",.86,"high");this.emitText(x,y-20,"WALL BOOST","#fff39a",true);}}
+    emitShockwave(x,y,color,scale=1,level="medium"){if(this.waves.length>=Math.round(32*this.lod)){if(level==="critical")this.waves.shift();else return;}this.waves.push({x,y,color,radius:5,maxRadius:62*scale,life:.42,maxLife:.42,width:2+scale,priority:PRIORITY[level]??2});this.emitted+=1;}
+    emitAbility(x,y,color,category){const map={veneno:"toxic-mist",fogo:"ember",gelo:"ice-shard",elétrica:"electric-arc",gravidade:"gravity-dust",tempo:"time-fragment",clone:"clone-fragment",defesa:"shield-fragment",movimento:"speed-trail"},type=map[category]||(category==="ofensivo"||category==="impacto"?"spark":"energy-mote");this.emitTyped(type,x,y,color,category==="caos"?24:16,category==="caos"?"high":"medium");this.emitShockwave(x,y,color,category==="caos"?1.2:.8,"high");}
+    emitLightning(x1,y1,x2,y2,color){if(this.lightning.length>=Math.round(18*this.lod))this.lightning.shift();const points=[{x:x1,y:y1}];for(let i=1;i<8;i+=1){const t=i/8;points.push({x:OA.lerp(x1,x2,t)+this.random.range(-12,12),y:OA.lerp(y1,y2,t)+this.random.range(-12,12)});}points.push({x:x2,y:y2});this.lightning.push({points,color,life:.16,maxLife:.16});this.emitted+=1;}
+    emitDamage(x,y,amount,critical,color){this.texts.push({x,y,label:`${critical?"CRIT ":"−"}${Math.round(amount)}`,critical,color,life:.78,maxLife:.78});if(this.texts.length>32)this.texts.shift();}
+    emitText(x,y,label,color,emphasized=false){this.texts.push({x,y,label,critical:emphasized,color,life:emphasized?1.15:.82,maxLife:emphasized?1.15:.82});if(this.texts.length>32)this.texts.shift();}
+    emitDeath(x,y,color){this.emitTyped("death-fragment",x,y,color,68,"critical",{minSpeed:80,maxSpeed:340,maxLife:1.2,maxSize:6});this.emitShockwave(x,y,color,2.2,"critical");this.flash=1;this.shake=11;}
+    addDecal(x,y,type,color,size=45,life=4){if(this.decals.length>=Math.round(40*this.lod))this.decals.shift();this.decals.push({x,y,type,color,size,life,maxLife:life});}
+    update(dt){for(const p of this.particles){if(!p.active)continue;p.life-=dt;if(p.life<=0){p.active=false;this._active-=1;this.typeCounts[p.group]=Math.max(0,(this.typeCounts[p.group]||1)-1);continue;}p.vy+=p.gravity*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;const drag=Math.exp(-(p.drag||5.2)*dt);p.vx*=drag;p.vy*=drag;}for(const item of this.texts){item.life-=dt;item.y-=(item.critical?42:31)*dt;}for(const wave of this.waves){wave.life-=dt;wave.radius+=wave.maxRadius/wave.maxLife*dt;}for(const bolt of this.lightning)bolt.life-=dt;for(const decal of this.decals)decal.life-=dt;this.compact(this.texts);this.compact(this.waves);this.compact(this.lightning);this.compact(this.decals);this.flash=Math.max(0,this.flash-dt*4.2);this.shake=Math.max(0,this.shake-dt*18);}
+    compact(array){let write=0;for(let read=0;read<array.length;read+=1)if(array[read].life>0)array[write++]=array[read];array.length=write;}
+    get activeCount(){return this._active;}
   }
-
-  OA.ParticleSystem = ParticleSystem;
+  OA.ParticleManager=ParticleManager;OA.ParticleSystem=ParticleManager;
 }());

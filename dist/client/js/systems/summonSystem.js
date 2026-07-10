@@ -30,6 +30,7 @@
         secondary: options.secondary || owner.secondaryColor, phase: angle, linked: options.linked !== false
       };
       world.summons.push(summon);
+      owner.characterTelemetry ||= { summonsCreated: 0, clonesCreated: 0, cloneTime: 0, healing: 0 };
       owner.characterTelemetry.summonsCreated += 1;
       this.particles.emitShockwave(summon.x, summon.y, summon.color, 0.38);
       return summon;
@@ -109,7 +110,7 @@
     }
     keepInArena(world, summon) {
       if (world.arena?.shape === "circle") { const radial = OA.Vector.normalize(summon.x - world.arena.centerX, summon.y - world.arena.centerY); const limit = world.arena.radius - summon.radius; if (radial.length > limit) { summon.x = world.arena.centerX + radial.x * limit; summon.y = world.arena.centerY + radial.y * limit; summon.vx *= -0.55; summon.vy *= -0.55; } return; }
-      const padding = world.arena.padding + summon.radius;
+      const padding = world.arena.padding + (world.arena.inset||0) + summon.radius;
       summon.x = OA.clamp(summon.x, padding, OA.CONFIG.arena.width - padding);
       summon.y = OA.clamp(summon.y, padding, OA.CONFIG.arena.height - padding);
     }

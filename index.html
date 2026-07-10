@@ -117,7 +117,11 @@
 
       <section class="screen" id="screen-powers" aria-labelledby="powers-title"><div class="library-page"><header class="library-head"><button class="back-button" type="button" data-go-home>← MENU</button><div><span class="eyebrow">BANCO DE TECNOLOGIAS</span><h1 id="powers-title">PODERES <b>50 NOVOS</b></h1></div></header><div class="library-tools panel"><input id="power-search" type="search" placeholder="Buscar poder…"><select id="power-category-filter"><option value="">Todas as categorias</option></select><select id="power-type-filter"><option value="">Todos os tipos</option></select><select id="power-rarity-filter"><option value="">Todas as raridades</option></select></div><div class="power-grid" id="power-grid"></div></div></section>
 
-      <section class="screen" id="screen-settings" aria-labelledby="settings-title"><div class="settings-page"><header class="library-head"><button class="back-button" type="button" data-go-home>← MENU</button><div><span class="eyebrow">PREFERÊNCIAS LOCAIS</span><h1 id="settings-title">CONFIGURAÇÕES</h1></div></header><div class="settings-grid"><section class="panel"><h2>QUALIDADE GRÁFICA</h2><label>Preset<select id="graphics-quality"><option value="low">Baixo</option><option value="medium">Médio</option><option value="high" selected>Alto</option><option value="ultra">Ultra</option></select></label><label><input type="checkbox" data-setting="trails" checked> Trilhas</label><label><input type="checkbox" data-setting="glow" checked> Glow</label><label><input type="checkbox" data-setting="animatedBackground" checked> Fundo animado</label><label><input type="checkbox" data-setting="arenaPreview" checked> Prévia da arena</label></section><section class="panel"><h2>ACESSIBILIDADE</h2><label><input type="checkbox" data-setting="reducedMotion"> Reduzir movimento</label><label><input type="checkbox" data-setting="reducedParticles"> Reduzir partículas</label><label><input type="checkbox" data-setting="screenShake"> Screen shake</label><label><input type="checkbox" data-setting="highContrast"> Alto contraste</label><label><input type="checkbox" data-setting="largeText"> Textos maiores</label><label><input type="checkbox" data-setting="reducedFlashes"> Reduzir flashes</label><label>Daltonismo<select id="colorblind-mode"><option value="none">Desativado</option><option value="deuteranopia">Deuteranopia</option><option value="protanopia">Protanopia</option><option value="tritanopia">Tritanopia</option></select></label><label>Escala da interface<input id="ui-scale" type="range" min=".85" max="1.2" value="1" step=".05"></label></section></div></div></section>
+      <section class="screen" id="screen-settings" aria-labelledby="settings-title"><div class="settings-page"><header class="library-head"><button class="back-button" type="button" data-go-home>← MENU</button><div><span class="eyebrow">PREFERÊNCIAS LOCAIS</span><h1 id="settings-title">CONFIGURAÇÕES</h1></div></header><div class="settings-grid">
+        <section class="panel"><h2>PRESET VISUAL</h2><label>Estilo<select id="visual-preset"><option value="performance">Performance</option><option value="balanced" selected>Balanceado</option><option value="cinematic">Cinemático</option><option value="chaotic">Caótico</option><option value="minimal">Minimalista</option></select></label><label>Qualidade geral<select id="graphics-quality"><option value="low">Baixo</option><option value="medium">Médio</option><option value="high" selected>Alto</option><option value="ultra">Ultra</option></select></label><label>Partículas<select id="particle-quality"><option value="low">Baixo · 300</option><option value="medium" selected>Médio · 700</option><option value="high">Alto · 1.500</option><option value="ultra">Ultra · 3.000</option></select></label><label><input type="checkbox" data-setting="adaptiveEffects" checked> Performance adaptativa</label></section>
+        <section class="panel"><h2>EFEITOS</h2><label><input type="checkbox" data-setting="trails" checked> Trilhas</label><label><input type="checkbox" data-setting="glow" checked> Glow</label><label><input type="checkbox" data-setting="bloom"> Bloom controlado</label><label><input type="checkbox" data-setting="screenShake" checked> Screen shake</label><label><input type="checkbox" data-setting="freezeFrame" checked> Freeze frame</label><label><input type="checkbox" data-setting="slowMotion" checked> Slow motion</label><label><input type="checkbox" data-setting="decals" checked> Marcas no chão</label><label><input type="checkbox" data-setting="distortion"> Distorção</label><label><input type="checkbox" data-setting="shadows" checked> Sombras</label><label><input type="checkbox" data-setting="lighting" checked> Iluminação</label><label><input type="checkbox" data-setting="statusEffects" checked> Efeitos de status</label><label><input type="checkbox" data-setting="animatedBackground" checked> Fundo animado</label></section>
+        <section class="panel"><h2>ACESSIBILIDADE</h2><label><input type="checkbox" data-setting="reducedMotion"> Reduzir movimento</label><label><input type="checkbox" data-setting="reducedParticles"> Reduzir partículas</label><label><input type="checkbox" data-setting="highContrast"> Alto contraste</label><label><input type="checkbox" data-setting="largeText"> Textos maiores</label><label><input type="checkbox" data-setting="reducedFlashes"> Desativar flashes</label><label><input type="checkbox" data-setting="arenaPreview" checked> Prévia da arena</label><label>Daltonismo<select id="colorblind-mode"><option value="none">Desativado</option><option value="deuteranopia">Deuteranopia</option><option value="protanopia">Protanopia</option><option value="tritanopia">Tritanopia</option></select></label><label>Escala da interface<input id="ui-scale" type="range" min=".85" max="1.2" value="1" step=".05"></label></section>
+      </div></div></section>
 
       <section class="screen" id="screen-setup" aria-labelledby="setup-title">
         <div class="page-heading">
@@ -155,6 +159,7 @@
 
             <div class="panel-title section-title"><span>FÍSICA AVANÇADA</span><small>AJUSTE O COMPORTAMENTO DA ARENA</small></div>
             <label class="field full-field"><span>Arena</span><select id="arena-select"><option value="classic" selected>Arena Clássica · retangular</option><option value="reactor">Círculo do Reator · alternativo</option><option value="forge">Forja Orbital · alternativo</option><option value="sanctum">Santuário Abissal · alternativo</option></select></label>
+            <label class="field full-field"><span>Duração da batalha</span><select id="duration-preset"><option value="short">Curta · 20–35 s</option><option value="standard" selected>Padrão · 45–75 s</option><option value="long">Longa · 80–120 s</option><option value="epic">Épica · 120–180 s</option></select></label>
             <label class="field full-field"><span>Preset físico</span>
               <select id="physics-preset">
                 <option value="arcade">Arcade</option><option value="realistic">Realista</option><option value="chaotic">Caótico</option>
@@ -215,11 +220,13 @@
           <article class="fighter-hud player-hud">
             <div class="hud-ident"><span class="hud-dot" id="player-dot"></span><div><small>JOGADOR</small><strong id="player-name-hud">NEXUS-7</strong></div><b id="player-hp-text">120 / 120</b></div>
             <div class="health-track"><i id="player-health-bar"></i></div>
+            <div class="hud-systems" id="player-systems"></div>
           </article>
           <div class="versus-mark">VS</div>
           <article class="fighter-hud enemy-hud">
             <div class="hud-ident"><span class="hud-dot" id="enemy-dot"></span><div><small>HOSTIL</small><strong id="enemy-name-hud">UNKNOWN</strong></div><b id="enemy-hp-text">—</b></div>
             <div class="health-track"><i id="enemy-health-bar"></i></div>
+            <div class="hud-systems" id="enemy-systems"></div>
           </article>
         </div>
 
@@ -238,6 +245,7 @@
           <div class="debug-panel" id="debug-panel" aria-live="polite"></div>
           <div class="combo-banner player-combo" id="player-combo"></div>
           <div class="combo-banner enemy-combo" id="enemy-combo"></div>
+          <div class="battle-phase-badge" id="battle-phase-badge">ABERTURA</div>
         </div>
 
         <div class="battle-controls panel">
@@ -311,6 +319,7 @@
   </div>
 
   <script defer src="js/config.js"></script>
+  <script defer src="js/data/combatPacing.js"></script>
   <script defer src="js/state.js"></script>
   <script defer src="js/storage.js"></script>
   <script defer src="js/engine/vector.js"></script>
@@ -338,6 +347,7 @@
   <script defer src="js/data/weapons.js"></script>
   <script defer src="js/data/perks.js"></script>
   <script defer src="js/data/abilities.js"></script>
+  <script defer src="js/data/cinematicAbilities.js"></script>
   <script defer src="js/data/catalogMetadata.js"></script>
   <script defer src="js/entities/fighter.js"></script>
   <script defer src="js/entities/projectile.js"></script>
@@ -356,12 +366,15 @@
   <script defer src="js/engine/audio.js"></script>
   <script defer src="js/systems/battleLogger.js"></script>
   <script defer src="js/systems/combatSystem.js"></script>
+  <script defer src="js/systems/burstProtectionSystem.js"></script>
+  <script defer src="js/systems/cinematicManagers.js"></script>
   <script defer src="js/systems/projectileSystem.js"></script>
   <script defer src="js/systems/weaponSystem.js"></script>
   <script defer src="js/systems/perkSystem.js"></script>
   <script defer src="js/systems/comboSystem.js"></script>
   <script defer src="js/systems/arenaSystem.js"></script>
   <script defer src="js/systems/abilitySystem.js"></script>
+  <script defer src="js/systems/cinematicAbilitySystem.js"></script>
   <script defer src="js/systems/characterBalanceSystem.js"></script>
   <script defer src="js/systems/matchupSystem.js"></script>
   <script defer src="js/systems/characterUnlockSystem.js"></script>

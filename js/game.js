@@ -16,10 +16,12 @@
       this.random = new OA.Random(seed);
       this.logger = new OA.BattleLogger();
       const physics = { ...OA.getPhysicsPreset(physicsSettings.id || "arcade"), ...physicsSettings };
-      const qualityScale = { low: 0.35, medium: 0.65, high: 1, ultra: 1.3 }[this.settings?.quality || "high"];
-      if (this.settings?.screenShake === false) physics.camera = 0;
-      this.particles = new OA.ParticleSystem(this.random, physics.particles * qualityScale * (this.settings?.reducedParticles ? 0.45 : 1));
-      this.combat = new OA.CombatSystem(this.random, this.particles, this.audio, this.logger);
+      const visualPreset=OA.VISUAL_PRESETS[this.settings?.visualPreset||"balanced"]||OA.VISUAL_PRESETS.balanced;
+      const particleQuality=this.settings?.particleQuality||visualPreset.particleQuality||this.settings?.quality||"high";
+      if (this.settings?.screenShake === false || this.settings?.reducedMotion) physics.camera = 0;
+      this.particles = new OA.ParticleManager(this.random,{quality:this.settings?.reducedParticles?"low":particleQuality});
+      this.burstProtection = new OA.BurstProtectionSystem();
+      this.combat = new OA.CombatSystem(this.random, this.particles, this.audio, this.logger, this.burstProtection);
       this.projectiles = new OA.ProjectileSystem(this.random, this.combat, this.particles, this.audio, physics.id === "chaotic" || physics.id === "pinball" ? 128 : 96);
       this.arenaSystem = new OA.ArenaSystem(this.random, this.particles, this.audio);
       this.weaponSystem = new OA.WeaponSystem(this.random, this.projectiles, this.combat, this.particles, this.audio);
@@ -33,11 +35,14 @@
       this.matchups = new OA.MatchupSystem();
       this.timeSystem = new OA.TimeSystem();
       this.summonSystem = new OA.SummonSystem(this.random, this.combat, this.projectiles, this.particles);
+      this.abilitySystem.summonSystem = this.summonSystem;
       this.cloneSystem = new OA.CloneSystem(this.summonSystem, this.particles);
       this.poisonSystem = new OA.PoisonSystem(this.combat, this.particles);
       this.spikeSystem = new OA.SpikeSystem(this.combat, this.particles);
       this.powerSystem = new OA.PowerSystem(this.random, this.particles, this.audio);
       this.characterSystem = new OA.CharacterSystem({ random:this.random, combat:this.combat, projectiles:this.projectiles, particles:this.particles, audio:this.audio, abilitySystem:this.abilitySystem, summons:this.summonSystem, clones:this.cloneSystem, poison:this.poisonSystem, spikes:this.spikeSystem, time:this.timeSystem, powers:this.powerSystem });
+      this.adaptivePerformance=new OA.AdaptivePerformanceSystem(this.settings||{});
+      this.cameraManager=new OA.CameraManager(this.settings||{});
 
       const playerCharacter = OA.CharacterRegistry.get(build.characterId) || OA.CharacterRegistry.get("echo");
       const enemyCharacter = OA.CharacterRegistry.get(options.enemyCharacterId) || this.matchups.chooseEnemy(playerCharacter, this.random, this.balance, difficultyKey);
@@ -46,14 +51,15 @@
       const openingAngle = this.random.range(-0.2, 0.2);
       const player = OA.CharacterFactory.create(playerCharacter,{id:"player-orb",team:"player",x:315,y:270,vx:Math.cos(openingAngle)*255,vy:Math.sin(openingAngle)*255,orbit:this.random.sign(),phase:this.random.range(0,Math.PI*2)});
       if(options.mode==="lab") enemy.ai.disabled=true;
+      const pacing=OA.getDurationPreset(options.durationPreset||build.durationPreset||this.settings?.durationPreset||"standard");
       this.world = {
         seed, difficulty: difficultyKey, physics, phase: "countdown", countdownRemaining: OA.CONFIG.battle.countdown,
-        time: 0, visualTime: 0, intensity: 1, suddenDeath: false, player, enemy, logger: this.logger,
+        time: 0, visualTime: 0, intensity: 1, suddenDeath: false, battlePhase:"opening", pacing, settings:this.settings||{}, player, enemy, logger: this.logger,
         arena: this.arenaSystem.create(physics.id, options.arenaId || "classic"), arenaSystem: this.arenaSystem,
-        mode: options.mode || "duel", events: [], zones: [], characterZones: [], poisonPools: [], summons: [], effects: [], scheduled: [],
+        mode: options.mode || "duel", events: [], zones: [], cinematicZones:[], characterZones: [], poisonPools: [], summons: [], effects: [], scheduled: [],
         timeScales: {game:1,visual:1,effect:1,animation:1,fighter:{player:1,enemy:1},projectile:{player:1,enemy:1},ability:{player:1,enemy:1}},
         physicsStats: { substeps: 1, collisions: 0, lastImpact: 0, lastNormal: null },
-        camera: { trauma: 0, zoom: 1 }, timeDilation: { scale: 1, timer: 0 },
+        camera: { trauma: 0, zoom: 1, cinematicZoom:0, shake:new OA.ScreenShakeManager(this.settings?.screenShake!==false&&!this.settings?.reducedMotion) }, timeDilation: { scale: 1, timer: 0 },
         finished: false, finishTimer: 0, winner: null, countdownCue: 3
       };
 
@@ -69,6 +75,8 @@
       enemy.equippedPowerIds = [];
       this.comboSystem.initialize(player);
       this.comboSystem.initialize(enemy);
+      this.burstProtection.initialize(player);
+      this.burstProtection.initialize(enemy);
       this.characterSystem.initialize(this.world, player);
       this.characterSystem.initialize(this.world, enemy);
       this.loop.accumulator = 0;
@@ -111,7 +119,7 @@
     update(dt) {
       const world = this.world;
       if (!world || world.finished) return;
-      world.camera.trauma = Math.max(0, world.camera.trauma - dt * 2.8);
+      world.camera.shake?.update(dt);world.camera.trauma=Math.max(world.camera.shake?.trauma||0,Math.max(0,world.camera.trauma-dt*2.8));this.cameraManager?.update(world,dt);
       if (world.timeDilation.timer > 0) world.timeDilation.timer -= dt;
       else world.timeDilation.scale = 1;
       this.timeSystem.update(world, dt);
@@ -127,8 +135,9 @@
 
       if (world.phase === "active") {
         world.time += simDt;
-        world.intensity = world.time < OA.CONFIG.battle.escalationAt ? 1 : world.time < OA.CONFIG.battle.arenaShiftAt ? 1.1 : world.time < OA.CONFIG.battle.suddenDeathAt ? 1.25 : Math.min(1.7, 1.45 + (world.time - OA.CONFIG.battle.suddenDeathAt) * 0.012);
-        world.suddenDeath = world.time >= OA.CONFIG.battle.suddenDeathAt;
+        world.battlePhase=world.time<world.pacing.openingEnd?"opening":world.time<world.pacing.escalationEnd?"escalation":world.time<world.pacing.suddenDeathAt?"climax":"suddenDeath";
+        world.intensity={opening:.9,escalation:1.05,climax:1.2,suddenDeath:Math.min(1.58,1.28+(world.time-world.pacing.suddenDeathAt)*.008)}[world.battlePhase];
+        world.suddenDeath = world.time >= world.pacing.suddenDeathAt;
         this.arenaSystem.update(world, simDt);
         this.characterSystem.update(world, simDt);
         this.summonSystem.update(world, simDt);
@@ -142,6 +151,7 @@
         this.physics.update(world, simDt);
         this.projectiles.update(world, simDt);
         this.comboSystem.update(world, simDt);
+        this.burstProtection.update(world,simDt);
         this.particles.update(simDt * (world.timeScales.effect || 1));
 
         const events = world.events.splice(0);
@@ -153,7 +163,7 @@
         if (world.mode === "lab" && (!world.player.alive || !world.enemy.alive)) {
           for (const fighter of [world.player, world.enemy]) if (!fighter.alive) { fighter.alive = true; fighter.health = fighter.maxHealth; fighter.shield = 0; fighter.x = fighter.team === "player" ? 315 : 645; fighter.y = 270; fighter.vx = fighter.vy = 0; }
         } else if (!world.player.alive || !world.enemy.alive) this.beginFinish(world.player.alive ? "player" : "enemy");
-        else if (world.mode !== "lab" && world.time >= OA.CONFIG.battle.timeLimit) this.beginFinish(world.player.healthRatio() >= world.enemy.healthRatio() ? "player" : "enemy");
+        else if (world.mode !== "lab" && world.time >= world.pacing.timeLimit) this.beginFinish(world.player.healthRatio() >= world.enemy.healthRatio() ? "player" : "enemy");
         return;
       }
 
@@ -171,6 +181,7 @@
       this.world.finishTimer = 1.25;
       this.world.timeDilation = { scale: 0.22, timer: 0.8 };
       this.world.camera.trauma = 0.9;
+      this.world.camera.shake?.add(1,.55,24,"critical");
       if (winner === "player") this.audio.victory(); else this.audio.defeat();
     }
 
@@ -186,6 +197,7 @@
       if (!this.world) return;
       this.world.visualTime += realDelta * (this.world.timeScales?.animation || this.world.timeScales?.visual || 1);
       this.renderer.render(this.world, alpha);
+      this.adaptivePerformance?.update(this.loop.fps,realDelta,this.particles);this.world.performanceLevel=this.adaptivePerformance?.level||0;for(const fighter of [this.world.player,this.world.enemy]){fighter.telemetry.minFps=Math.min(fighter.telemetry.minFps||60,this.loop.fps);fighter.telemetry.particlesEmitted=this.particles.emitted;fighter.telemetry.peakParticles=this.particles.peak;}
       this.callbacks.onFrame(this.world, this.loop, this.particles.activeCount + this.projectiles.activeCount);
     }
 

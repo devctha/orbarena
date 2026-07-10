@@ -3,7 +3,7 @@
 
   const OrbArena = window.OrbArena = window.OrbArena || {};
 
-  OrbArena.VERSION = "0.3.0-duke-archives";
+  OrbArena.VERSION = "0.4.0-cinematic-pacing";
   OrbArena.CREDITS = Object.freeze({ creator: "Duke Dandalian", text: "Todos os direitos de criação, design, desenvolvimento e direção atribuídos a Duke Dandalian." });
   OrbArena.CONFIG = Object.freeze({
     arena: Object.freeze({ width: 960, height: 540, padding: 18 }),

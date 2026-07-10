@@ -19,8 +19,8 @@
       return {
         ...definition, definition, name: definition.name, centerX: 480, centerY: 270,
         padding: OA.CONFIG.arena.padding, gravitySign: 1, gravityTimer: 0, rotationForce: 0,
-        rotationTimer: 0, angle: 0, damageTick: 0, platforms, bumpers,
-        powerUps: [0, 1, 2, 3].map((index) => ({ x: 300 + index * 120, y: index % 2 ? 390 : 150, radius: 10, active: false, kind: ["heal", "haste", "shield", "ultimate"][index], respawn: 5 + index * 2 })),
+        rotationTimer: 0, angle: 0, damageTick: 0, inset:0, borderPulse:0, impactMarks:[], platforms, bumpers,
+        powerUps: [0,1,2,3,4,5].map((index) => ({ x: 230 + index * 100, y: index % 2 ? 405 : 135, radius: 10, active: false, kind: ["heal","shield","haste","damage","cooldown","ultimate"][index], respawn: 7 + index * 3 })),
         portals: [], portalCooldown: { player: 0, enemy: 0 },
         speedZones: circular ? [{ x: 370, y: 270, radius: 42, dx: 0, dy: -1 }, { x: 590, y: 270, radius: 42, dx: 0, dy: 1 }] : [{ x: 205, y: 270, radius: 42, dx: 1, dy: 0 }, { x: 755, y: 270, radius: 42, dx: -1, dy: 0 }]
       };
@@ -28,6 +28,8 @@
 
     update(world, dt) {
       const arena = world.arena;
+      const pacing=world.pacing||{escalationEnd:40,suddenDeathAt:60};
+      arena.borderPulse=Math.max(0,arena.borderPulse-dt*2.2);for(const mark of arena.impactMarks)mark.life-=dt;arena.impactMarks=arena.impactMarks.filter(mark=>mark.life>0);
       arena.angle += dt * (world.physics.id === "pinball" ? 1.25 : 0.72);
       arena.gravityTimer = Math.max(0, arena.gravityTimer - dt);
       arena.rotationTimer = Math.max(0, arena.rotationTimer - dt);
@@ -49,19 +51,26 @@
           if (powerUp.kind === "heal") fighter.heal(18);
           if (powerUp.kind === "haste") fighter.setStatus("haste", 4, 0.3);
           if (powerUp.kind === "shield") fighter.addShield(24);
+          if (powerUp.kind === "damage") fighter.nextImpactMultiplier=Math.max(fighter.nextImpactMultiplier,1.3);
+          if (powerUp.kind === "cooldown") for(const id of Object.keys(fighter.abilityCooldowns))fighter.abilityCooldowns[id]*=.68;
+          if (powerUp.kind === "cleanse") for(const id of ["stunned","frozen","slow","silenced","prison","confused"])fighter.status[id]=0;
+          if (powerUp.kind === "clone") world.effects.push({type:"clone",owner:fighter,x:fighter.x,y:fighter.y,angle:0,life:5,color:fighter.color});
+          if (powerUp.kind === "bounce") fighter.setStatus("superBounce",5,1.15);
+          if (powerUp.kind === "wallBoost") fighter.wallBoostTimer=Math.max(fighter.wallBoostTimer,3);
           if (powerUp.kind === "ultimate" && fighter.characterState) fighter.characterState.ultimateCharge = Math.min(100, fighter.characterState.ultimateCharge + 24);
-          powerUp.active = false; powerUp.respawn = 12; world.events.push({ type: "powerUp", fighter, kind: powerUp.kind });
+          fighter.telemetry.powerUpsCollected+=1;this.particles.emitAbility(powerUp.x,powerUp.y,{heal:"#74e69a",shield:"#69c9ff",haste:"#f2cf65",damage:"#ff8a68",cooldown:"#78d8ff",ultimate:"#ba79ef"}[powerUp.kind]||"#c4f4ff","powerUp");powerUp.active=false;powerUp.kind=this.random.pick(["heal","shield","haste","damage","cooldown","ultimate","cleanse","clone","bounce","wallBoost"]);powerUp.respawn=14+this.random.range(0,8);world.events.push({type:"powerUp",fighter,kind:powerUp.kind});
         }
       }
       arena.portals.forEach((portal) => { portal.life -= dt; });
       arena.portals = arena.portals.filter((portal) => portal.life > 0);
-      if (arena.shape === "circle" && world.time >= OA.CONFIG.battle.arenaShiftAt) {
-        const progress = OA.clamp((world.time - OA.CONFIG.battle.arenaShiftAt) / 22, 0, 1);
+      if (arena.shape === "circle" && world.battlePhase === "climax") {
+        const progress = OA.clamp((world.time - pacing.escalationEnd) / Math.max(1,pacing.suddenDeathAt-pacing.escalationEnd), 0, 1);
         arena.radius = OA.lerp(arena.definition.radius, arena.definition.radius - 34, progress);
       }
+      if(arena.shape!=="circle")arena.inset=world.battlePhase==="climax"?OA.lerp(0,18,OA.clamp((world.time-pacing.escalationEnd)/Math.max(1,pacing.suddenDeathAt-pacing.escalationEnd),0,1)):world.suddenDeath?Math.min(34,18+(world.time-pacing.suddenDeathAt)*.5):0;
       if (world.suddenDeath) {
         arena.damageTick -= dt;
-        if (arena.damageTick <= 0) { arena.damageTick = 1; for (const fighter of [world.player, world.enemy]) fighter.applyDamage(1.4 + (world.time - OA.CONFIG.battle.suddenDeathAt) * 0.09, { source: "ability", dot: true, ignoreArmor: true }); }
+        if (arena.damageTick <= 0) { arena.damageTick = 1; for (const fighter of [world.player, world.enemy]) fighter.applyDamage(1.1 + (world.time - pacing.suddenDeathAt) * 0.06, { source: "ability", dot: true, ignoreArmor: true }); }
       }
     }
 
@@ -73,7 +82,7 @@
       }
       if (world.suddenDeath) {
         const toward = OA.Vector.normalize(arena.centerX - fighter.x, arena.centerY - fighter.y);
-        const force = (160 + (world.time - OA.CONFIG.battle.suddenDeathAt) * 9) * arena.gravitySign;
+        const force = (150 + (world.time - (world.pacing?.suddenDeathAt||60)) * 7) * arena.gravitySign;
         fighter.applyForce(toward.x * force * fighter.mass, toward.y * force * fighter.mass);
       }
       if (arena.rotationForce) {

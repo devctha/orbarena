@@ -125,7 +125,7 @@
 
     getBounds(world) {
       if (world.arena?.shape === "circle") return { shape: "circle", centerX: world.arena.centerX, centerY: world.arena.centerY, radius: world.arena.radius };
-      const padding = world.arena?.padding ?? OA.CONFIG.arena.padding;
+      const padding = (world.arena?.padding ?? OA.CONFIG.arena.padding)+(world.arena?.inset||0);
       return { left: padding, right: OA.CONFIG.arena.width - padding, top: padding, bottom: OA.CONFIG.arena.height - padding };
     }
 

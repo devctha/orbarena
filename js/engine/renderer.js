@@ -13,6 +13,9 @@
       this.hitboxes = false;
       this.debug = false;
       this.displayFont = '"Barlow Condensed", "Arial Narrow", sans-serif';
+      this.arenaCache = new Map();
+      this.fighterSpriteCache = new Map();
+      this.performanceLevel = 0;
       this.configureCanvas();
     }
 
@@ -24,12 +27,45 @@
       this.context.imageSmoothingEnabled = true;
     }
 
+    createSurface(width, height) {
+      if (typeof OffscreenCanvas !== "undefined") return new OffscreenCanvas(width, height);
+      const surface = document.createElement("canvas"); surface.width = width; surface.height = height; return surface;
+    }
+
+    rectangularFloor(colors, padding, suddenDeath) {
+      const key = `${colors.floor}|${colors.ring}|${padding}|${suddenDeath ? 1 : 0}`;
+      if (this.arenaCache.has(key)) return this.arenaCache.get(key);
+      const surface = this.createSurface(this.width, this.height), context = surface.getContext("2d", { alpha: false });
+      context.fillStyle = "#02050a"; context.fillRect(0, 0, this.width, this.height);
+      const floor = context.createLinearGradient(0, 0, this.width, this.height);
+      floor.addColorStop(0, suddenDeath ? "#1d101a" : colors.floor); floor.addColorStop(1, "#03070c");
+      context.fillStyle = floor; context.fillRect(padding, padding, this.width - padding * 2, this.height - padding * 2);
+      context.save(); context.beginPath(); context.rect(padding, padding, this.width - padding * 2, this.height - padding * 2); context.clip();
+      context.strokeStyle = "rgba(90,180,200,.08)"; context.lineWidth = 1;
+      for (let x = padding; x <= this.width - padding; x += 48) { context.beginPath(); context.moveTo(x, padding); context.lineTo(x, this.height - padding); context.stroke(); }
+      for (let y = padding; y <= this.height - padding; y += 48) { context.beginPath(); context.moveTo(padding, y); context.lineTo(this.width - padding, y); context.stroke(); }
+      context.strokeStyle = this.hexToRgba(colors.ring, 0.12); context.beginPath(); context.moveTo(this.width / 2, padding); context.lineTo(this.width / 2, this.height - padding); context.stroke(); context.restore();
+      this.arenaCache.set(key, surface); if (this.arenaCache.size > 8) this.arenaCache.delete(this.arenaCache.keys().next().value); return surface;
+    }
+
+    fighterSprite(fighter, radius) {
+      const bright = fighter.deform.flash > 0.35, key = `${fighter.color}|${fighter.stroke}|${radius}|${bright ? 1 : 0}`;
+      if (this.fighterSpriteCache.has(key)) return this.fighterSpriteCache.get(key);
+      const pad = 5, logical = (radius + pad) * 2, ratio = 2, surface = this.createSurface(Math.ceil(logical * ratio), Math.ceil(logical * ratio)), context = surface.getContext("2d");
+      context.scale(ratio, ratio); const center = logical / 2;
+      const gradient = context.createRadialGradient(center - radius * .32, center - radius * .38, radius * .05, center, center, radius);
+      gradient.addColorStop(0, "#f4ffff"); gradient.addColorStop(.14, fighter.stroke); gradient.addColorStop(.4, bright ? "#ffffff" : fighter.color); gradient.addColorStop(1, "#07101c");
+      context.fillStyle = gradient; context.beginPath(); context.arc(center, center, radius, 0, Math.PI * 2); context.fill();
+      const sprite = { surface, logical, offset: logical / 2 }; this.fighterSpriteCache.set(key, sprite); if (this.fighterSpriteCache.size > 128) this.fighterSpriteCache.delete(this.fighterSpriteCache.keys().next().value); return sprite;
+    }
+
     render(world, alpha) {
       const context = this.context;
       const distance = Math.hypot(world.player.x - world.enemy.x, world.player.y - world.enemy.y);
-      const zoomTarget = OA.clamp(1.04 - distance / 5400 + world.camera.trauma * 0.035, 0.92, 1.07);
+      this.performanceLevel = world.performanceLevel || 0;
+      const peakSpeed=Math.max(world.player.currentSpeed(),world.enemy.currentSpeed()),zoomTarget = this.settings?.reducedMotion ? 1 : OA.clamp(1.04 - distance / 5400-peakSpeed/26000 + world.camera.trauma * 0.025-(world.camera.cinematicZoom||0), 0.89, 1.07);
       world.camera.zoom += (zoomTarget - world.camera.zoom) * 0.08;
-      const trauma = world.camera.trauma * world.physics.camera;
+      const trauma = this.settings?.reducedMotion ? 0 : world.camera.trauma * world.physics.camera;
       const shakeX = Math.sin(world.visualTime * 91) * trauma * 8 + Math.sin(world.visualTime * 37) * this.particles.shake * 0.35;
       const shakeY = Math.cos(world.visualTime * 77) * trauma * 8 + Math.cos(world.visualTime * 43) * this.particles.shake * 0.35;
 
@@ -38,6 +74,7 @@
       context.scale(world.camera.zoom, world.camera.zoom);
       context.translate(-this.width / 2, -this.height / 2);
       this.drawArena(context, world);
+      this.drawDecals(context,world);
       this.drawZones(context, world);
       this.drawTrail(context, world.player);
       this.drawTrail(context, world.enemy);
@@ -78,27 +115,22 @@
     }
 
     drawRectangularArena(context, world, colors) {
-      const padding = world.arena.padding || OA.CONFIG.arena.padding;
-      context.fillStyle = "#02050a"; context.fillRect(-30, -30, this.width + 60, this.height + 60);
-      const floor = context.createLinearGradient(0, 0, this.width, this.height);
-      floor.addColorStop(0, world.suddenDeath ? "#1d101a" : colors.floor); floor.addColorStop(1, "#03070c");
-      context.fillStyle = floor; context.fillRect(padding, padding, this.width - padding * 2, this.height - padding * 2);
+      const padding = (world.arena.padding || OA.CONFIG.arena.padding)+(world.arena.inset||0);
+      context.drawImage(this.rectangularFloor(colors, padding, world.suddenDeath), 0, 0, this.width, this.height);
       context.save(); context.beginPath(); context.rect(padding, padding, this.width - padding * 2, this.height - padding * 2); context.clip();
-      context.strokeStyle = "rgba(90,180,200,.08)"; context.lineWidth = 1;
-      for (let x = padding; x <= this.width - padding; x += 48) { context.beginPath(); context.moveTo(x, padding); context.lineTo(x, this.height - padding); context.stroke(); }
-      for (let y = padding; y <= this.height - padding; y += 48) { context.beginPath(); context.moveTo(padding, y); context.lineTo(this.width - padding, y); context.stroke(); }
-      context.strokeStyle = this.hexToRgba(colors.ring, 0.12); context.beginPath(); context.moveTo(this.width / 2, padding); context.lineTo(this.width / 2, this.height - padding); context.stroke();
       for (const zone of world.arena.speedZones || []) { context.fillStyle = "rgba(68,231,244,.04)"; context.strokeStyle = "rgba(68,231,244,.25)"; context.setLineDash([6, 8]); context.beginPath(); context.arc(zone.x, zone.y, zone.radius, 0, Math.PI * 2); context.fill(); context.stroke(); }
       context.setLineDash([]);
       for (const bumper of world.arena.bumpers || []) { context.fillStyle = "#142536"; context.strokeStyle = colors.ring; context.lineWidth = 3; context.beginPath(); context.arc(bumper.x, bumper.y, bumper.radius, 0, Math.PI * 2); context.fill(); context.stroke(); }
-      for (const powerUp of world.arena.powerUps || []) if (powerUp.active) { context.fillStyle = { heal: "#74e69a", haste: "#f2cf65", shield: "#69c9ff", ultimate: "#ba79ef" }[powerUp.kind]; context.beginPath(); context.arc(powerUp.x, powerUp.y, powerUp.radius, 0, Math.PI * 2); context.fill(); }
+      for (const powerUp of world.arena.powerUps || []) if (powerUp.active) { const pulse=1+Math.sin(world.visualTime*5+powerUp.x)*.18;context.fillStyle = { heal: "#74e69a", haste: "#f2cf65", shield: "#69c9ff", damage:"#ff8a68",cooldown:"#78d8ff",ultimate: "#ba79ef",cleanse:"#e9ffff",clone:"#72d8d8",bounce:"#ffd66c",wallBoost:"#fff19b" }[powerUp.kind]||"#fff";context.shadowColor=context.fillStyle;context.shadowBlur=12; context.beginPath(); context.arc(powerUp.x, powerUp.y, powerUp.radius*pulse, 0, Math.PI * 2); context.fill();context.shadowBlur=0; }
       context.restore();
-      context.save(); context.strokeStyle = world.suddenDeath ? "#ff627f" : this.hexToRgba(colors.ring, .82); context.lineWidth = world.suddenDeath ? 7 : 5; context.shadowColor = colors.ring; context.shadowBlur = 12; context.strokeRect(padding, padding, this.width - padding * 2, this.height - padding * 2); context.restore();
+      context.save(); context.strokeStyle = world.suddenDeath ? "#ff627f" : this.hexToRgba(colors.ring, .82); context.lineWidth = world.suddenDeath ? 7 : 5; context.shadowColor = colors.ring; context.shadowBlur = this.performanceLevel >= 3 ? 0 : 12+world.arena.borderPulse*18; context.strokeRect(padding, padding, this.width - padding * 2, this.height - padding * 2);for(const mark of world.arena.impactMarks||[]){context.globalAlpha=mark.life/mark.maxLife;context.strokeStyle=mark.color;context.beginPath();context.moveTo(mark.x-mark.ny*18,mark.y+mark.nx*18);context.lineTo(mark.x+mark.ny*18,mark.y-mark.nx*18);context.stroke();}context.restore();
     }
+
+    drawDecals(context,world){if(this.settings?.decals===false||this.performanceLevel>=3)return;context.save();for(const decal of this.particles.decals||[]){context.globalAlpha=OA.clamp(decal.life/decal.maxLife,0,.35);context.strokeStyle=decal.color;context.lineWidth=1.5;for(let i=0;i<6;i++){const a=i*Math.PI/3+decal.size*.01;context.beginPath();context.moveTo(decal.x+Math.cos(a)*6,decal.y+Math.sin(a)*6);context.lineTo(decal.x+Math.cos(a)*decal.size*(.5+(i%2)*.25),decal.y+Math.sin(a)*decal.size*(.5+(i%2)*.25));context.stroke();}}context.restore();}
 
     drawZones(context, world) {
       context.save();
-      for (const zone of [...world.zones, ...(world.characterZones || []), ...(world.poisonPools || [])]) {
+      for (const zone of [...world.zones, ...(world.cinematicZones||[]), ...(world.characterZones || []), ...(world.poisonPools || [])]) {
         const opacity = OA.clamp(zone.life / zone.maxLife, 0, 1) * 0.28;
         const gradient = context.createRadialGradient(zone.x, zone.y, 3, zone.x, zone.y, zone.radius);
         gradient.addColorStop(0, this.hexToRgba(zone.color, opacity * 1.5));
@@ -134,13 +166,14 @@
       context.save();
       context.lineCap = "round";
       context.globalCompositeOperation = "lighter";
-      for (let index = 1; index < fighter.trail.length; index += 1) {
+      const stride = this.performanceLevel >= 2 ? 2 : 1;
+      for (let index = stride; index < fighter.trail.length; index += stride) {
         const point = fighter.trail[index];
         const opacity = index / fighter.trail.length;
-        context.strokeStyle = this.hexToRgba(point.boost ? "#fff39a" : fighter.trailColor, opacity * (point.boost ? 0.42 : 0.22));
+        context.strokeStyle = this.hexToRgba(point.boost ? "#fff39a" : fighter.trailColor, opacity * (point.boost ? 0.42 : 0.22) * (stride > 1 ? .55 : 1));
         context.lineWidth = fighter.radius * (point.boost ? 0.5 : 0.3) * opacity;
         context.beginPath();
-        context.moveTo(fighter.trail[index - 1].x, fighter.trail[index - 1].y);
+        context.moveTo(fighter.trail[Math.max(0,index - stride)].x, fighter.trail[Math.max(0,index - stride)].y);
         context.lineTo(point.x, point.y);
         context.stroke();
       }
@@ -153,20 +186,17 @@
       this.drawWeapon(context, fighter, x, y);
       context.save();
       context.translate(x, y);
+      const moveAngle=Math.atan2(fighter.vy,fighter.vx),stretch=OA.clamp(fighter.currentSpeed()/Math.max(1,fighter.maxSpeed)-.55,0,.22);context.rotate(moveAngle);context.scale(1+stretch,1-stretch*.48);context.rotate(-moveAngle);
       const impactAngle = Math.atan2(fighter.deform.ny, fighter.deform.nx);
       context.rotate(impactAngle);
       context.scale(1 - fighter.deform.amount * 0.24, 1 + fighter.deform.amount * 0.17);
       context.rotate(-impactAngle);
-      context.shadowBlur = this.settings?.glow === false ? 0 : 22 + (fighter.wallBoostTimer > 0 ? 18 : 0);
+      context.shadowBlur = this.settings?.glow === false || this.performanceLevel >= 3 ? 0 : 22 + (fighter.wallBoostTimer > 0 ? 18 : 0);
       context.shadowColor = fighter.wallBoostTimer > 0 ? "#fff39a" : fighter.color;
       const radius = fighter.radius;
-      const gradient = context.createRadialGradient(-radius * 0.32, -radius * 0.38, radius * 0.05, 0, 0, radius);
-      gradient.addColorStop(0, "#f4ffff");
-      gradient.addColorStop(0.14, fighter.stroke);
-      gradient.addColorStop(0.4, fighter.deform.flash > 0.35 ? "#ffffff" : fighter.color);
-      gradient.addColorStop(1, "#07101c");
-      context.fillStyle = gradient;
-      context.beginPath(); context.arc(0, 0, radius, 0, Math.PI * 2); context.fill();
+      const sprite = this.fighterSprite(fighter, radius);
+      context.drawImage(sprite.surface, -sprite.offset, -sprite.offset, sprite.logical, sprite.logical);
+      context.beginPath(); context.arc(0, 0, radius, 0, Math.PI * 2);
       context.lineWidth = 2.2;
       context.strokeStyle = fighter.invulnerability > 0 ? "#ffffff" : fighter.stroke;
       context.stroke();
@@ -199,6 +229,8 @@
         context.lineWidth = 3;
         context.beginPath(); context.arc(0, 0, radius + 9, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, fighter.shield / fighter.maxShield)); context.stroke();
       }
+      if(fighter.burstProtection?.active>0){context.strokeStyle=this.hexToRgba("#d8f6ff",.55);context.lineWidth=2;context.setLineDash([2,5]);context.beginPath();context.arc(0,0,radius+13+Math.sin(time*9)*1.5,0,Math.PI*2);context.stroke();context.setLineDash([]);}
+      if(this.settings?.statusEffects!==false){if(fighter.status.burning>0){context.fillStyle="#ff9b56";for(let i=0;i<3;i++){const a=time*2+i*2.1;context.beginPath();context.arc(Math.cos(a)*radius*.72,-radius+Math.sin(a)*5,2.2,0,Math.PI*2);context.fill();}}if(fighter.status.frozen>0){context.strokeStyle="#b9f3ff";context.beginPath();context.moveTo(-radius*.7,-radius*.2);context.lineTo(radius*.65,radius*.3);context.moveTo(-radius*.2,radius*.75);context.lineTo(radius*.25,-radius*.7);context.stroke();}if(fighter.status.slow>0){context.strokeStyle="#b898ff";context.globalAlpha=.5;context.beginPath();context.arc(0,0,radius+16,0,Math.PI*1.5);context.stroke();context.globalAlpha=1;}if(fighter.status.reflecting>0){context.strokeStyle="#9ff8ff";context.lineWidth=3;context.beginPath();context.arc(0,0,radius+11,0,Math.PI*2);context.stroke();}}
       context.strokeStyle = this.hexToRgba(fighter.wallBoostTimer > 0 ? "#fff39a" : fighter.color, fighter.wallBoostTimer > 0 ? 0.72 : 0.28);
       context.lineWidth = fighter.wallBoostTimer > 0 ? 2.5 : 1;
       context.setLineDash([4, 6]);
@@ -299,6 +331,8 @@
           context.strokeStyle = effect.color; context.lineWidth = 2;
           context.beginPath(); context.arc(effect.x, effect.y, 16 + ratio * 55, 0, Math.PI * 2); context.stroke();
           context.beginPath(); context.moveTo(effect.x - 10, effect.y); context.lineTo(effect.x + 10, effect.y); context.moveTo(effect.x, effect.y - 10); context.lineTo(effect.x, effect.y + 10); context.stroke();
+        } else if(effect.type==="telegraph"){
+          const ratio=1-effect.life/effect.maxLife;context.strokeStyle=effect.color;context.fillStyle=this.hexToRgba(effect.color,.06+ratio*.1);context.lineWidth=2+ratio*2;context.setLineDash([7,8]);context.beginPath();context.arc(effect.x,effect.y,Math.max(18,effect.radius*(.35+ratio*.65)),0,Math.PI*2);context.fill();context.stroke();context.setLineDash([]);
         }
         context.restore();
       }
@@ -311,10 +345,10 @@
         if (!particle.active) continue;
         const opacity = OA.clamp(particle.life / particle.maxLife, 0, 1);
         context.strokeStyle = context.fillStyle = this.hexToRgba(particle.color, opacity);
-        if (particle.type === "streak") {
+        if (particle.type === "streak"||particle.type.includes("trail")||particle.type.includes("arc")) {
           context.lineWidth = particle.size * 0.7;
           context.beginPath(); context.moveTo(particle.x, particle.y); context.lineTo(particle.x - particle.vx * 0.045, particle.y - particle.vy * 0.045); context.stroke();
-        } else context.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size);
+        } else if(particle.type.includes("smoke")||particle.type.includes("mist")||particle.type.includes("dust")||particle.type.includes("mote")){context.globalAlpha=opacity*.45;context.beginPath();context.arc(particle.x,particle.y,particle.size,0,Math.PI*2);context.fill();}else if(particle.type.includes("shard")||particle.type.includes("fragment")||particle.type.includes("debris")){context.beginPath();context.moveTo(particle.x+particle.size,particle.y);context.lineTo(particle.x-particle.size*.6,particle.y-particle.size*.5);context.lineTo(particle.x-particle.size*.4,particle.y+particle.size*.6);context.closePath();context.fill();}else context.fillRect(particle.x-particle.size/2,particle.y-particle.size/2,particle.size,particle.size);
       }
       context.restore();
     }

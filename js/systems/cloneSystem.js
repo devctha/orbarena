@@ -13,7 +13,7 @@
         blockProjectiles: options.blockProjectiles !== false, explodeOnDeath: options.explosion || 0,
         color: options.color || owner.color, limit: options.limit || 2
       });
-      if (clone) { clone.statsScale=options.statsScale||.68;clone.damageScale=options.damageRatio||.45;clone.healthScale=options.healthRatio||.24;clone.simplifiedAI=true;clone.noProgression=true;clone.isPrimary=false;owner.characterTelemetry.clonesCreated += 1; }
+      if (clone) { clone.statsScale=options.statsScale||.68;clone.damageScale=options.damageRatio||.45;clone.healthScale=options.healthRatio||.24;clone.simplifiedAI=true;clone.noProgression=true;clone.isPrimary=false;owner.characterTelemetry ||= { summonsCreated: 0, clonesCreated: 0, cloneTime: 0, healing: 0 };owner.characterTelemetry.clonesCreated += 1; }
       return clone;
     }
     update(world, dt) {

@@ -36,6 +36,7 @@
       this.updateScheduled(world, dt);
       this.updateZones(world, dt);
       this.updateEffects(world, dt);
+      OA.CinematicAbilitySystem?.update(world,dt,this);
       for (const fighter of [world.player, world.enemy]) {
         const abilityDt = dt * (world.timeScales?.ability[fighter.team] || 1);
         fighter.damageReduction = fighter.status.damageReduction > 0 ? (fighter.statusPower.damageReduction || 0.5) : 0;
@@ -73,11 +74,13 @@
 
     use(world, actor, target, ability, reactive = false) {
       if (!ability || !actor.alive || (!reactive && actor.status.silenced > 0)) return false;
+      if (!reactive && actor.status.prison > 0 && (ability.category === "movimento" || ["dash", "multiDash", "teleportToward", "teleportRandom", "phaseThrough", "ghostDash", "chainTeleport", "swapPosition"].includes(ability.effect))) return false;
       if ((actor.abilityCooldowns[ability.id] || 0) > 0) return false;
       const cooldownScale = world.intensity > 1 ? 1 + (world.intensity - 1) * 0.22 : 1;
       actor.abilityCooldowns[ability.id] = ability.cooldown / cooldownScale;
       actor.lastAbility = ability;
       actor.telemetry.abilitiesUsed += 1;
+      if(ability.cooldown>=13)actor.telemetry.ultimatesUsed=(actor.telemetry.ultimatesUsed||0)+1;
       this.logger.logAbility(world.time, actor, ability);
       this.audio.ability(ability.category, ability.power);
       this.particles.emitAbility(actor.x, actor.y, ability.color, ability.category);
@@ -93,6 +96,7 @@
       const p = ability.params;
       const direction = OA.Vector.normalize(target.x - actor.x, target.y - actor.y);
       const bounds = this.bounds(world, actor.radius);
+      if(effect==="cinematic")return OA.CinematicAbilitySystem.execute(world,actor,target,ability,this);
       switch (effect) {
         case "dash": this.impulse(actor, direction, ability.power); break;
         case "multiDash": for (let i = 0; i < p.count; i += 1) this.schedule(world, i * p.interval, () => this.impulse(actor, OA.Vector.normalize(target.x - actor.x, target.y - actor.y), ability.power)); break;

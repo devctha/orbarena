@@ -53,7 +53,7 @@
         const state = fighter.characterState;
         state.activeCooldown = Math.max(0, state.activeCooldown - localDt);
         state.ultimateCooldown = Math.max(0, state.ultimateCooldown - localDt);
-        state.ultimateCharge = Math.min(100, state.ultimateCharge + localDt * 3.2);
+        state.ultimateCharge = Math.min(100, state.ultimateCharge + localDt * (world.battlePhase==="opening"?2.1:world.battlePhase==="escalation"?3.5:world.battlePhase==="climax"?4.4:5.2));
         state.activeDecision -= localDt;
         const target = this.opponent(world, fighter);
         const handler = OA.CharacterMechanics.get(fighter.characterId);
@@ -84,6 +84,7 @@
       fighter.characterState.ultimateCharge = 0;
       fighter.characterState.ultimateCooldown = 18;
       fighter.characterState.ultimateUses += 1;
+      fighter.telemetry.ultimatesUsed=(fighter.telemetry.ultimatesUsed||0)+1;
       world.camera.trauma = Math.min(1, world.camera.trauma + 0.55);
       world.timeDilation = { scale: 0.35, timer: 0.14 };
       this.particles.emitShockwave(fighter.x, fighter.y, fighter.glowColor, 1.6);

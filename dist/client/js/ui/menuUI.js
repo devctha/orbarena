@@ -86,7 +86,7 @@
     launch() {
       const seed = this.seedInput.value.trim() || OA.Random.createSeed();
       this.setSeed(seed);
-      this.app.startBattle(this.getBuild(), this.difficulty.value, seed, this.getPhysicsSettings(), { arenaId: document.querySelector("#arena-select").value });
+      this.app.startBattle(this.getBuild(), this.difficulty.value, seed, this.getPhysicsSettings(), { arenaId: document.querySelector("#arena-select").value, durationPreset:document.querySelector("#duration-preset").value });
     }
 
     applyPhysicsPreset(id) {

@@ -72,8 +72,9 @@
       this.updateFighterHud("enemy", world.enemy);
       this.updateCombo("player", world.player);
       this.updateCombo("enemy", world.enemy);
-      const intensityLevel = world.suddenDeath ? "MORTE SÚBITA" : world.time >= OA.CONFIG.battle.arenaShiftAt ? "INTENSIDADE III" : world.time >= OA.CONFIG.battle.escalationAt ? "INTENSIDADE II" : "INTENSIDADE I";
+      const phaseLabels={opening:"ABERTURA",escalation:"ESCALADA",climax:"CLÍMAX",suddenDeath:"MORTE SÚBITA"},intensityLevel=phaseLabels[world.battlePhase]||"ABERTURA";
       document.querySelector("#intensity-indicator").textContent = `${intensityLevel} · ${world.physics.name.toUpperCase()}`;
+      const phaseBadge=document.querySelector("#battle-phase-badge");phaseBadge.textContent=intensityLevel;phaseBadge.dataset.phase=world.battlePhase;
 
       if (world.phase === "countdown") {
         const value = Math.ceil(world.countdownRemaining);
@@ -111,6 +112,7 @@
       const shield = fighter.shield > 0 ? ` +${Math.ceil(fighter.shield)}` : "";
       document.querySelector(`#${prefix}-hp-text`).textContent = `${health} / ${Math.round(fighter.maxHealth)}${shield}`;
       document.querySelector(`#${prefix}-health-bar`).style.width = `${fighter.healthRatio() * 100}%`;
+      const systems=document.querySelector(`#${prefix}-systems`),ultimate=Math.round(fighter.characterState?.ultimateCharge||0),burst=fighter.burstProtection?.active>0?"BURST PROTECTION":"",power=fighter.wallBoostTimer>0?"WALL BOOST":fighter.status.haste>0?"VELOCIDADE":"";systems.innerHTML=`<span>ULT ${ultimate}%</span>${fighter.shield>0?`<span>ESCUDO ${Math.ceil(fighter.shield)}</span>`:""}${burst?`<b>${burst}</b>`:""}${power?`<em>${power}</em>`:""}`;
     }
 
     updateCombo(prefix, fighter) {

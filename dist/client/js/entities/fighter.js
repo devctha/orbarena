@@ -103,7 +103,10 @@
         knockbackCaused: 0, knockbackReceived: 0, collisionDamage: 0,
         weaponDamage: 0, abilityDamage: 0, timeAtMaxSpeed: 0,
         combos: 0, largestCombo: 0, abilitiesUsed: 0, projectilesFired: 0,
-        projectilesHit: 0, blockedDamage: 0, healing: 0
+        projectilesHit: 0, blockedDamage: 0, healing: 0, shieldGenerated: 0,
+        burstProtectionActivations: 0, damagePrevented: 0, recoveryHealing: 0,
+        particlesEmitted: 0, peakParticles: 0, minFps: 60, powerUpsCollected: 0,
+        ultimatesUsed: 0, suddenDeathTime: 0
       };
     }
 
@@ -148,7 +151,8 @@
     }
 
     applyImpulse(x, y, options = {}) {
-      const resistance = options.ignoreResistance ? 1 : 1 - this.knockbackResistance;
+      const burstResistance = this.burstProtection?.active > 0 ? 0.22 : 0;
+      const resistance = options.ignoreResistance ? 1 : 1 - OA.clamp(this.knockbackResistance + burstResistance, 0, .82);
       const scale = resistance / Math.max(0.2, this.mass);
       this.vx += x * scale;
       this.vy += y * scale;
@@ -216,6 +220,7 @@
       const diminishing = 1 - OA.clamp(this.shield / Math.max(1, this.maxShield), 0, 0.75) * 0.45;
       const added = Math.min(amount * diminishing, this.maxShield - this.shield);
       this.shield += Math.max(0, added);
+      this.telemetry.shieldGenerated = (this.telemetry.shieldGenerated || 0) + Math.max(0, added);
       return added;
     }
 

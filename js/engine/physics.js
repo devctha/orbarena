@@ -72,8 +72,10 @@
         if (this.random.chance(0.28)) fighter.ai.orbit *= -1;
         if (this.random.chance(0.56 * fighter.ai.aggression)) fighter.ai.burstTimer = this.random.range(0.16, 0.42);
         fighter.ai.wallIntent = this.random.chance(0.12 * (fighter.ai.wallPreference || 1)) && fighter.currentSpeed() > world.physics.wallBoostThreshold * 0.62 ? this.random.range(0.25, 0.7) : 0;
+        fighter.ai.faintTimer=this.random.chance(.18*(fighter.ai.dashPriority||1))?this.random.range(.18,.5):0;
       }
       fighter.ai.wallIntent = Math.max(0, fighter.ai.wallIntent - dt);
+      fighter.ai.faintTimer=Math.max(0,(fighter.ai.faintTimer||0)-dt);
 
       const healthPressure = 1 - fighter.healthRatio();
       let pursuit = distance > fighter.ai.desiredDistance ? 1 : -0.2;
@@ -88,6 +90,9 @@
 
       let desiredX = toTarget.x * pursuit - toTarget.y * fighter.ai.orbit * orbit;
       let desiredY = toTarget.y * pursuit + toTarget.x * fighter.ai.orbit * orbit;
+      if(fighter.ai.faintTimer>0){const sign=Math.sin(world.time*12+fighter.ai.faintPhase)>0?1:-1;desiredX+=-toTarget.y*sign*1.35;desiredY+=toTarget.x*sign*1.35;}
+      const usefulPowerUp=(world.arena.powerUps||[]).filter(item=>item.active).sort((a,b)=>Math.hypot(a.x-fighter.x,a.y-fighter.y)-Math.hypot(b.x-fighter.x,b.y-fighter.y))[0];
+      if(usefulPowerUp&&(fighter.healthRatio()<.58||fighter.characterState?.ultimateCharge<45)){const seek=OA.Vector.normalize(usefulPowerUp.x-fighter.x,usefulPowerUp.y-fighter.y),weight=fighter.healthRatio()<.3?1.35:.55;desiredX+=seek.x*weight;desiredY+=seek.y*weight;}
       const threat = this.findProjectileThreat(fighter);
       if (threat) {
         const projectileDirection = OA.Vector.normalize(threat.vx, threat.vy);
@@ -106,6 +111,7 @@
       const wobble = Math.sin(world.time * 2.5 + fighter.ai.phase) * 0.12;
       desiredX += Math.cos(world.time + fighter.ai.phase) * wobble;
       desiredY += Math.sin(world.time * 1.2 + fighter.ai.phase) * wobble;
+      const spiral=Math.sin(world.time*(1.4+fighter.ai.risk)+fighter.ai.phase)*.18;desiredX+=-toTarget.y*spiral;desiredY+=toTarget.x*spiral;
       const desired = OA.Vector.normalize(desiredX, desiredY);
       fighter.directionX += (desired.x - fighter.directionX) * Math.min(1, dt * 10);
       fighter.directionY += (desired.y - fighter.directionY) * Math.min(1, dt * 10);
@@ -133,7 +139,7 @@
 
     nearestWallDirection(world, fighter) {
       if (world.arena?.shape === "circle") return OA.Vector.normalize(fighter.x - world.arena.centerX, fighter.y - world.arena.centerY);
-      const padding = world.arena?.padding || this.bounds.padding;
+      const padding = (world.arena?.padding || this.bounds.padding)+(world.arena?.inset||0);
       const distances = [
         { distance: fighter.x - padding, x: -1, y: 0 },
         { distance: this.bounds.width - padding - fighter.x, x: 1, y: 0 },
@@ -208,7 +214,7 @@
 
     resolveWalls(world, fighter) {
       if (world.arena?.shape === "circle") return this.resolveCircularWall(world, fighter);
-      const padding = world.arena?.padding ?? this.bounds.padding;
+      const padding = (world.arena?.padding ?? this.bounds.padding)+(world.arena?.inset||0);
       const minX = padding + fighter.radius;
       const maxX = this.bounds.width - padding - fighter.radius;
       const minY = padding + fighter.radius;

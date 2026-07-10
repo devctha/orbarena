@@ -1,0 +1,36 @@
+(function(){
+  "use strict";
+  const OA=window.OrbArena;
+  OA.DURATION_PRESETS=Object.freeze({
+    short:Object.freeze({id:"short",name:"Curta",openingEnd:10,escalationEnd:22,suddenDeathAt:30,timeLimit:35,damageScale:.98}),
+    standard:Object.freeze({id:"standard",name:"Padrão",openingEnd:20,escalationEnd:50,suddenDeathAt:68,timeLimit:75,damageScale:.88}),
+    long:Object.freeze({id:"long",name:"Longa",openingEnd:25,escalationEnd:65,suddenDeathAt:105,timeLimit:120,damageScale:.82}),
+    epic:Object.freeze({id:"epic",name:"Épica",openingEnd:30,escalationEnd:80,suddenDeathAt:155,timeLimit:180,damageScale:.76})
+  });
+  OA.DAMAGE_LIMITS=Object.freeze({maxSingleHitPercent:.24,maxBurstWindowPercent:.38,repeatedHitReduction:.76,sameSourceHitCooldown:.085,criticalDamageCap:1.42,comboDamageDecay:.09,collisionDamageCap:.22,projectileDamageCap:.16,abilityDamageCap:.2,ultimateDamageCap:.3,burstWindow:1,burstReduction:.28,burstDuration:1.55,burstCooldown:6});
+  OA.VISUAL_PRESETS=Object.freeze({
+    performance:{label:"Performance",particleQuality:"low",trails:true,glow:false,bloom:false,screenShake:false,freezeFrame:false,slowMotion:false,decals:false,distortion:false,shadows:false,lighting:false,statusEffects:true,adaptiveEffects:true},
+    balanced:{label:"Balanceado",particleQuality:"medium",trails:true,glow:true,bloom:false,screenShake:true,freezeFrame:true,slowMotion:true,decals:true,distortion:false,shadows:true,lighting:true,statusEffects:true,adaptiveEffects:true},
+    cinematic:{label:"Cinemático",particleQuality:"high",trails:true,glow:true,bloom:true,screenShake:true,freezeFrame:true,slowMotion:true,decals:true,distortion:true,shadows:true,lighting:true,statusEffects:true,adaptiveEffects:true},
+    chaotic:{label:"Caótico",particleQuality:"ultra",trails:true,glow:true,bloom:true,screenShake:true,freezeFrame:true,slowMotion:true,decals:true,distortion:true,shadows:true,lighting:true,statusEffects:true,adaptiveEffects:false},
+    minimal:{label:"Minimalista",particleQuality:"low",trails:false,glow:false,bloom:false,screenShake:false,freezeFrame:false,slowMotion:false,decals:false,distortion:false,shadows:false,lighting:false,statusEffects:false,adaptiveEffects:true}
+  });
+  OA.MOVEMENT_PROFILES=Object.freeze({
+    Agressivo:{distance:55,attack:1.25,wall:1,dash:1.2,ultimate:1.1,collision:1.25,retreat:.2,zones:.7,lowHealth:.75,projectiles:.85},
+    Cauteloso:{distance:190,attack:.82,wall:.75,dash:1.15,ultimate:.9,collision:.45,retreat:1.4,zones:1.1,lowHealth:1.5,projectiles:1.35},
+    Assassino:{distance:85,attack:1.2,wall:1.15,dash:1.5,ultimate:1.3,collision:1.05,retreat:.8,zones:.65,lowHealth:1.2,projectiles:1.4},
+    Tanque:{distance:65,attack:.9,wall:.9,dash:.55,ultimate:1.1,collision:1.4,retreat:.35,zones:1,lowHealth:.55,projectiles:.65},
+    Atirador:{distance:285,attack:1.15,wall:.65,dash:1.05,ultimate:1.15,collision:.35,retreat:1.25,zones:.8,lowHealth:1.35,projectiles:1.15},
+    Controlador:{distance:205,attack:.95,wall:.7,dash:.85,ultimate:1.25,collision:.55,retreat:1,zones:1.55,lowHealth:1.1,projectiles:1.2},
+    Caótico:{distance:120,attack:1.12,wall:1.35,dash:1.3,ultimate:1.4,collision:1,zones:1.25,retreat:.65,lowHealth:.8,projectiles:1},
+    Invocador:{distance:220,attack:.88,wall:.7,dash:.85,ultimate:1.2,collision:.4,retreat:1.15,zones:1.4,lowHealth:1.25,projectiles:1.1},
+    Temporal:{distance:180,attack:1,wall:.8,dash:1.2,ultimate:1.4,collision:.65,retreat:1,zones:1.35,lowHealth:1.3,projectiles:1.25},
+    Berserker:{distance:38,attack:1.4,wall:1.25,dash:1.25,ultimate:1.35,collision:1.55,retreat:.05,zones:.5,lowHealth:.2,projectiles:.7},
+    Oportunista:{distance:145,attack:1.05,wall:1.1,dash:1.2,ultimate:1.3,collision:.9,retreat:.8,zones:1,lowHealth:1.15,projectiles:1.25},
+    Predador:{distance:72,attack:1.3,wall:1,dash:1.3,ultimate:1.2,collision:1.2,retreat:.3,zones:.75,lowHealth:.65,projectiles:1.1},
+    Fugitivo:{distance:245,attack:.72,wall:1.2,dash:1.55,ultimate:.95,collision:.25,retreat:1.6,zones:.9,lowHealth:1.7,projectiles:1.55},
+    Defensivo:{distance:165,attack:.82,wall:.85,dash:.9,ultimate:1.05,collision:.6,retreat:1.2,zones:1.2,lowHealth:1.5,projectiles:1.25},
+    Estratégico:{distance:185,attack:1,wall:1,dash:1,ultimate:1.25,collision:.8,retreat:.9,zones:1.3,lowHealth:1.25,projectiles:1.3}
+  });
+  OA.getDurationPreset=(id="standard")=>({...OA.DURATION_PRESETS[id]||OA.DURATION_PRESETS.standard});
+}());

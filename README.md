@@ -4,7 +4,7 @@ Criado, desenvolvido, projetado, concebido e dirigido por **Duke Dandalian**.
 
 Todos os direitos de criação, design, desenvolvimento e direção atribuídos a Duke Dandalian.
 
-Versão `0.3.0-duke-archives` do auto battler para navegador. O modo principal utiliza a Arena Clássica retangular, com quatro paredes físicas, ricochetes fortes, Wall Boost e movimentação arcade. As arenas circulares anteriores continuam disponíveis apenas como modos alternativos.
+Versão `0.4.0-cinematic-pacing` do auto battler para navegador. O modo principal utiliza a Arena Clássica retangular, com quatro paredes físicas, ricochetes fortes, Wall Boost e movimentação arcade. As arenas circulares anteriores continuam disponíveis apenas como modos alternativos.
 
 ## Conteúdo
 
@@ -12,7 +12,10 @@ Versão `0.3.0-duke-archives` do auto battler para navegador. O modo principal u
 - Criador de builds com validação, Power Budget e sinergias.
 - Builds salvas, variantes, importação e exportação JSON.
 - Histórico com seeds, telemetria, revanche e repetição.
-- Arsenal, catálogo de perks e catálogo de habilidades.
+- Arsenal, catálogo de perks e catálogo com 160 habilidades e poderes.
+- Quatro presets de duração, fases de combate e Burst Protection.
+- ParticleManager com LOD, prioridades e pools de 300 a 3.000 partículas.
+- 40 habilidades cinematográficas com telegraphing.
 - Bestiário com descoberta progressiva.
 - Save local versão 3 com migração das versões anteriores.
 - Arena retangular padrão; Wall Boost e colisões nas quatro paredes preservados.
@@ -29,6 +32,7 @@ node tests/characters-smoke.js
 node tests/kits-smoke.js
 node tests/expansion-smoke.js
 node tests/modules-v3-smoke.js
+node tests/pacing-cinematic-smoke.js
 ```
 
-Consulte `DUKE_ARCHIVES_V3.md` para a arquitetura e os fluxos da atualização.
+Consulte `CINEMATIC_COMBAT_V4.md` para ritmo, proteção de burst, partículas e habilidades cinematográficas.
