@@ -92,6 +92,7 @@
       this.audio.ability(ability.category, ability.power);
       this.particles.emitAbility(actor.x, actor.y, ability.color, ability.category);
       this.particles.emitText(actor.x, actor.y - actor.radius - 22, ability.name.toUpperCase(), ability.color, false);
+      world.presentationSystem?.activate(world,actor,target,ability);
       this.execute(world, actor, target, ability);
       world.events.push({ type: "ability", fighter: actor, target, ability: ability.id });
       if (ability.cooldown >= 13) world.events.push({ type: "ultimate", fighter: actor, target, ability: ability.id });

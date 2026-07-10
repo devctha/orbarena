@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "layers": ["aura", "shell", "material", "core", "runes", "details", "satellites", "state"],
+  "families": ["crystal", "ice", "prism", "liquid", "organic", "tech", "clock", "void", "singularity", "shadow", "fire", "electric"],
+  "hitboxPolicy": "visual-only"
+}

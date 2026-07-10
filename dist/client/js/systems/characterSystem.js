@@ -46,7 +46,7 @@
     }
     update(world, dt) {
       this.updateZones(world, dt);
-      for (const fighter of [world.player, world.enemy]) {
+      for (const fighter of OA.getFighters(world)) {
         if (!fighter.alive) continue;
         const scale = world.timeScales?.ability[fighter.team] || 1;
         const localDt = dt * scale;
@@ -163,7 +163,8 @@
       for (const zone of world.characterZones) {
         zone.life -= dt;
         zone.tick -= dt;
-        const target = zone.owner.team === "player" ? world.enemy : world.player;
+        const target = OA.findTarget(world, zone.owner);
+        if (!target) continue;
         const distance = Math.hypot(target.x - zone.x, target.y - zone.y);
         const ownerDistance = Math.hypot(zone.owner.x - zone.x, zone.owner.y - zone.y);
         const inside = distance <= zone.radius + target.radius;
@@ -196,7 +197,7 @@
       }
       world.characterZones = world.characterZones.filter((zone) => zone.life > 0);
     }
-    opponent(world, fighter) { return fighter === world.player ? world.enemy : world.player; }
+    opponent(world, fighter) { return OA.findTarget(world, fighter); }
   }
   OA.CharacterSystem = CharacterSystem;
 }());

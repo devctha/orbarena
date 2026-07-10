@@ -1,0 +1,14 @@
+(function(){
+  "use strict";const OA=window.OrbArena;
+  class AbilityPresentationSystem{
+    constructor(particles,audio){this.particles=particles;this.audio=audio;this.sequence=0;}
+    metadata(ability){return OA.AbilityVisualRegistry?.get(ability)||ability;}
+    push(world,effect){world.effects||=[];const visuals=world.effects.filter((item)=>item.type==="abilityTelegraph");if(visuals.length>=32){const oldest=visuals[0],index=world.effects.indexOf(oldest);if(index>=0)world.effects.splice(index,1);}world.effects.push(effect);return effect;}
+    prepare(world,actor,target,ability,duration=null){const meta=this.metadata(ability),tele=meta.telegraph||{},life=Math.max(.08,Number(duration||tele.duration||.16)),point=target||actor;actor.visualState||={};actor.visualState.cast={abilityId:meta.id,life,maxLife:life,color:meta.fx?.color||meta.color,phase:"prepare"};
+      return this.push(world,{id:`tele-${++this.sequence}`,type:"abilityTelegraph",owner:actor,targetId:target?.id,x:point.x,y:point.y,originX:actor.x,originY:actor.y,life,maxLife:life,radius:Math.max(38,meta.area||meta.range||72),color:meta.fx?.color||meta.color||actor.color,shape:tele.shape||"circle",pattern:tele.pattern||"pulse",label:tele.label||meta.name,phase:"prepare",colorIndependent:tele.colorIndependent!==false});}
+    activate(world,actor,target,ability){const meta=this.metadata(ability),color=meta.fx?.color||meta.color||actor.color;actor.visualState||={};actor.visualState.cast={abilityId:meta.id,life:.28,maxLife:.28,color,phase:"cast"};if(!world.effects.some((effect)=>effect.type==="abilityTelegraph"&&effect.owner===actor&&effect.targetId===target?.id&&effect.life>0))this.prepare(world,actor,target,meta,Math.min(.18,meta.telegraph?.duration||.14));this.particles.emitTyped?.(meta.fx?.particle||"energy-ring",actor.x,actor.y,color,meta.impact?.tier==="heavy"?20:11,meta.impact?.tier==="heavy"?"high":"medium",{minSpeed:45,maxSpeed:170,maxLife:.62});this.audio?.skillPhase?.("cast",meta);}
+    impact(world,actor,target,abilityId,critical=false){const meta=this.metadata(abilityId);if(!meta||!target)return;const color=meta.fx?.color||actor?.color||target.color;this.particles.emitTyped?.(meta.impact?.particle||"spark",target.x,target.y,color,critical?24:12,critical?"critical":"medium",{minSpeed:60,maxSpeed:critical?280:185,maxLife:.72});if(meta.impact?.shockwave||critical)this.particles.emitShockwave?.(target.x,target.y,color,critical?1.45:.85,critical?"critical":"high");if(meta.impact?.decal)this.particles.addDecal?.(target.x,target.y,meta.fx?.language||"ability",color,critical?54:36,3.2);this.audio?.skillPhase?.(critical?"critical":"impact",meta);}
+    update(world,dt){for(const fighter of OA.getFighters(world)){const cast=fighter.visualState?.cast;if(!cast)continue;cast.life-=dt;if(cast.life<=0)fighter.visualState.cast=null;}}
+  }
+  OA.AbilityPresentationSystem=AbilityPresentationSystem;
+}());

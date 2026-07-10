@@ -8,7 +8,7 @@
       this.storage = new OA.Storage(OA.CONFIG.storageKey);
       const saved = this.storage.read();
       this.state.settings = { ...this.state.settings, ...saved.settings };
-      this.audio = new OA.AudioSystem(this.state.settings.audio);
+      this.audio = new OA.AudioSystem(this.state.settings);
       this.balance = new OA.CharacterBalanceSystem();
       this.matchups = new OA.MatchupSystem();
       this.unlocks = new OA.CharacterUnlockSystem(this.storage);
@@ -28,6 +28,11 @@
       if (!this.contentAudit.valid) console.error("Falha na validação de conteúdo", this.contentAudit.errors);
       this.battleUI = new OA.BattleUI(this);
       this.resultsUI = new OA.ResultsUI(this);
+      this.draftUI = new OA.DraftUI(this);
+      this.remasterUI = new OA.RemasterUI(this);
+      this.toolsUI = new OA.ToolsUI(this);
+      this.visualLabUI = new OA.VisualLabUI(this);
+      this.homeRemasterUI = new OA.HomeRemasterUI(this);
       this.game = new OA.Game(document.querySelector("#arena-canvas"), this.audio, {
         onFrame: (world, loop, particles) => this.battleUI.update(world, loop, particles),
         onComplete: (result) => this.completeBattle(result)
@@ -108,6 +113,7 @@
       document.querySelector("#character-lab").hidden = world.mode !== "lab";
       this.state.settings.speed = 1;
       this.showScreen("battle");
+      this.remasterUI?.matchIntro(world);
     }
 
     completeBattle(result) {
@@ -115,7 +121,7 @@
       const temporary = Boolean(this.lastSetup?.options?.temporary || this.lastSetup?.options?.mode === "lab" || this.lastSetup?.options?.mode === "build-test");
       result.buildId = this.lastSetup?.build?.id || null;
       result.mode = this.lastSetup?.options?.mode || "duel";
-      if (!temporary) { this.storage.addBattle(result); this.progression.recordBattle(result, result.buildId); }
+      if (!temporary) { this.storage.addBattle(result); this.progression.recordBattle(result, result.buildId); const unlocks=new OA.MetaGameSystem().unlocks(this.storage.read(),result); this.storage.setAchievements(unlocks.ids); result.newAchievements=unlocks.fresh; }
       else result.temporary = true;
       this.resultsUI.present(result);
       this.updateRecord();
@@ -136,6 +142,7 @@
       this.game.stop();
       this.showScreen("menu");
       this.updateRecord();
+      this.homeRemasterUI?.render();
     }
 
     togglePause() {

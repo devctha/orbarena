@@ -37,7 +37,7 @@
     }
 
     update(world, dt) {
-      for (const fighter of [world.player, world.enemy]) {
+      for (const fighter of OA.getFighters(world)) {
         if (fighter.perkEffects.lowHealthSpeed && fighter.healthRatio() < 0.3) {
           fighter.setStatus("haste", dt * 2, fighter.perkEffects.lowHealthSpeed);
         }

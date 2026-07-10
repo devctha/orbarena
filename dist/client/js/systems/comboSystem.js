@@ -11,7 +11,7 @@
     }
 
     update(world, dt) {
-      for (const fighter of [world.player, world.enemy]) {
+      for (const fighter of OA.getFighters(world)) {
         fighter.combo.timer = Math.max(0, fighter.combo.timer - dt);
         if (fighter.combo.timer <= 0 && fighter.combo.count > 0) {
           fighter.combo.count = 0;

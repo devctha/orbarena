@@ -27,6 +27,11 @@
       this.context.imageSmoothingEnabled = true;
     }
 
+    resize(width, height) {
+      if (width === this.width && height === this.height) return;
+      this.width = width; this.height = height; this.arenaCache.clear(); this.configureCanvas();
+    }
+
     createSurface(width, height) {
       if (typeof OffscreenCanvas !== "undefined") return new OffscreenCanvas(width, height);
       const surface = document.createElement("canvas"); surface.width = width; surface.height = height; return surface;
@@ -61,9 +66,10 @@
 
     render(world, alpha) {
       const context = this.context;
-      const distance = Math.hypot(world.player.x - world.enemy.x, world.player.y - world.enemy.y);
+      const fighters = OA.getFighters(world), focus = world.controlledFighter || world.player || fighters[0], target = focus && OA.findTarget(world, focus);
+      const distance = focus && target ? Math.hypot(focus.x - target.x, focus.y - target.y) : 300;
       this.performanceLevel = world.performanceLevel || 0;
-      const peakSpeed=Math.max(world.player.currentSpeed(),world.enemy.currentSpeed()),zoomTarget = this.settings?.reducedMotion ? 1 : OA.clamp(1.04 - distance / 5400-peakSpeed/26000 + world.camera.trauma * 0.025-(world.camera.cinematicZoom||0), 0.89, 1.07);
+      const peakSpeed=Math.max(0,...fighters.map((fighter)=>fighter.currentSpeed())),zoomTarget = this.settings?.reducedMotion ? 1 : OA.clamp(1.04 - distance / 5400-peakSpeed/26000 + world.camera.trauma * 0.025-(world.camera.cinematicZoom||0), 0.89, 1.07);
       world.camera.zoom += (zoomTarget - world.camera.zoom) * 0.08;
       const trauma = this.settings?.reducedMotion ? 0 : world.camera.trauma * world.physics.camera;
       const shakeX = Math.sin(world.visualTime * 91) * trauma * 8 + Math.sin(world.visualTime * 37) * this.particles.shake * 0.35;
@@ -74,15 +80,14 @@
       context.scale(world.camera.zoom, world.camera.zoom);
       context.translate(-this.width / 2, -this.height / 2);
       this.drawArena(context, world);
+      this.drawArenaEnergy(context,world);
       this.drawDecals(context,world);
       this.drawZones(context, world);
-      this.drawTrail(context, world.player);
-      this.drawTrail(context, world.enemy);
+      for (const fighter of fighters) this.drawTrail(context, fighter);
       this.drawEffects(context, world);
       this.drawProjectiles(context);
       this.drawSummons(context, world);
-      if (world.player.alive) this.drawFighter(context, world.player, alpha, world.visualTime);
-      if (world.enemy.alive) this.drawFighter(context, world.enemy, alpha, world.visualTime);
+      for (const fighter of fighters) if (fighter.alive) this.drawFighter(context, fighter, alpha, world.visualTime);
       this.drawParticles(context);
       this.drawWaves(context);
       this.drawLightning(context);
@@ -114,6 +119,8 @@
       context.restore();context.save();context.strokeStyle=world.suddenDeath?"#ff627f":this.hexToRgba(colors.ring,.72);context.lineWidth=world.suddenDeath?5:3;context.shadowColor=world.suddenDeath?"#ff5277":colors.ring;context.shadowBlur=world.suddenDeath?16:8;context.beginPath();context.arc(cx,cy,r,0,Math.PI*2);context.stroke();context.globalAlpha=.45;context.lineWidth=8;context.beginPath();context.arc(cx,cy,r+13,0,Math.PI*2);context.stroke();context.restore();
     }
 
+    drawArenaEnergy(context,world){if(world.arena.shape==="circle"||this.performanceLevel>=4)return;const padding=(world.arena.padding||18)+(world.arena.inset||0),pulse=world.arena.borderPulse||0,time=world.visualTime;context.save();context.globalAlpha=.18+pulse*.35;context.strokeStyle=world.suddenDeath?"#e96a7d":"#67dce5";context.lineWidth=1;context.setLineDash([18,26]);context.lineDashOffset=-time*22;context.strokeRect(padding+7,padding+7,this.width-(padding+7)*2,this.height-(padding+7)*2);context.setLineDash([]);if(pulse>.08){context.globalAlpha=pulse*.28;context.lineWidth=8+pulse*12;context.strokeRect(padding-2,padding-2,this.width-(padding-2)*2,this.height-(padding-2)*2);}context.restore();}
+
     drawRectangularArena(context, world, colors) {
       const padding = (world.arena.padding || OA.CONFIG.arena.padding)+(world.arena.inset||0);
       context.drawImage(this.rectangularFloor(colors, padding, world.suddenDeath), 0, 0, this.width, this.height);
@@ -141,6 +148,9 @@
         context.strokeStyle = this.hexToRgba(zone.color, opacity + 0.15);
         context.setLineDash([7, 10]);
         context.beginPath(); context.arc(zone.x, zone.y, zone.radius * (0.82 + Math.sin(world.visualTime * 4) * 0.06), 0, Math.PI * 2); context.stroke();
+      }
+      if (world.objective) {
+        context.fillStyle=world.objective.contested?"rgba(255,96,128,.12)":"rgba(88,232,244,.09)";context.strokeStyle=world.objective.contested?"#ff6685":"#58e8f4";context.lineWidth=2;context.setLineDash([9,7]);context.beginPath();context.arc(world.objective.x,world.objective.y,world.objective.radius,0,Math.PI*2);context.fill();context.stroke();
       }
       context.setLineDash([]);
       context.restore();
@@ -170,8 +180,9 @@
       for (let index = stride; index < fighter.trail.length; index += stride) {
         const point = fighter.trail[index];
         const opacity = index / fighter.trail.length;
-        context.strokeStyle = this.hexToRgba(point.boost ? "#fff39a" : fighter.trailColor, opacity * (point.boost ? 0.42 : 0.22) * (stride > 1 ? .55 : 1));
-        context.lineWidth = fighter.radius * (point.boost ? 0.5 : 0.3) * opacity;
+        const statusColor=fighter.status.burning>0?"#e99a51":fighter.status.frozen>0?"#91d9e8":fighter.status.poisoned>0?"#8bcf63":fighter.trailColor;
+        context.strokeStyle = this.hexToRgba(point.boost ? "#e7c371" : statusColor, opacity * (point.boost ? 0.4 : 0.2) * (stride > 1 ? .55 : 1));
+        context.lineWidth = fighter.radius * (point.boost ? 0.5 : 0.27) * opacity;
         context.beginPath();
         context.moveTo(fighter.trail[Math.max(0,index - stride)].x, fighter.trail[Math.max(0,index - stride)].y);
         context.lineTo(point.x, point.y);
@@ -196,6 +207,7 @@
       const radius = fighter.radius;
       const sprite = this.fighterSprite(fighter, radius);
       context.drawImage(sprite.surface, -sprite.offset, -sprite.offset, sprite.logical, sprite.logical);
+      this.drawOrbMaterial(context,fighter,radius,time);
       context.beginPath(); context.arc(0, 0, radius, 0, Math.PI * 2);
       context.lineWidth = 2.2;
       context.strokeStyle = fighter.invulnerability > 0 ? "#ffffff" : fighter.stroke;
@@ -246,6 +258,19 @@
       }
     }
 
+    drawOrbMaterial(context,fighter,radius,time){
+      const texture=(fighter.texture||fighter.character?.texture||"core").toLowerCase(),secondary=fighter.secondaryColor||fighter.trailColor||fighter.color,health=fighter.healthRatio(),phase=time*1.2+(fighter.ai?.phase||0);context.save();context.beginPath();context.arc(0,0,radius-.8,0,Math.PI*2);context.clip();
+      if(/crystal|ice|prism/.test(texture)){context.strokeStyle=this.hexToRgba(fighter.stroke,.34);context.lineWidth=1;for(let i=0;i<7;i++){const a=i*Math.PI*2/7+phase*.04;context.beginPath();context.moveTo(Math.cos(a)*radius*.12,Math.sin(a)*radius*.12);context.lineTo(Math.cos(a+.32)*radius*.92,Math.sin(a+.32)*radius*.92);context.stroke();}}
+      else if(/liquid|acid|blood|venom|organic/.test(texture)){context.fillStyle=this.hexToRgba(secondary,.2);for(let i=0;i<4;i++){const a=phase*(.35+i*.08)+i*1.7,r=radius*(.22+i*.12);context.beginPath();context.arc(Math.cos(a)*r*.45,Math.sin(a*1.3)*r*.4,radius*(.12+i*.025),0,Math.PI*2);context.fill();}}
+      else if(/tech|clock|adaptive|scope/.test(texture)){context.strokeStyle=this.hexToRgba(fighter.stroke,.38);context.lineWidth=1.2;for(let i=0;i<3;i++){context.setLineDash([2+i*2,3]);context.beginPath();context.arc(0,0,radius*(.3+i*.2),phase*(i%2?-1:1),phase*(i%2?-1:1)+Math.PI*1.2);context.stroke();}context.setLineDash([]);}
+      else if(/void|singularity|shadow|eclipse|dark/.test(texture)){const dark=context.createRadialGradient(Math.cos(phase)*4,Math.sin(phase)*4,1,0,0,radius*.85);dark.addColorStop(0,"rgba(0,0,0,.86)");dark.addColorStop(.52,this.hexToRgba(secondary,.2));dark.addColorStop(1,"rgba(0,0,0,0)");context.fillStyle=dark;context.fillRect(-radius,-radius,radius*2,radius*2);context.strokeStyle=this.hexToRgba(fighter.glowColor||fighter.stroke,.45);context.beginPath();context.ellipse(0,0,radius*.68,radius*.25,phase*.2,0,Math.PI*2);context.stroke();}
+      else if(/fire|star|comet|electric/.test(texture)){context.strokeStyle=this.hexToRgba(secondary,.34);for(let i=0;i<6;i++){const a=i*Math.PI/3+phase*.2;context.beginPath();context.moveTo(Math.cos(a)*radius*.28,Math.sin(a)*radius*.28);context.lineTo(Math.cos(a+.18)*radius*.86,Math.sin(a+.18)*radius*.86);context.stroke();}}
+      if(health<.55){context.strokeStyle=this.hexToRgba("#dcecf0",.18+(1-health)*.25);context.lineWidth=1;const cracks=Math.ceil((1-health)*7);for(let i=0;i<cracks;i++){const a=i*2.39+phase*.02;context.beginPath();context.moveTo(Math.cos(a)*radius*.35,Math.sin(a)*radius*.35);context.lineTo(Math.cos(a+.15)*radius*.62,Math.sin(a+.15)*radius*.62);context.lineTo(Math.cos(a-.08)*radius*.88,Math.sin(a-.08)*radius*.88);context.stroke();}}
+      context.restore();
+      if(/void|singularity|scope|eye/.test(texture)){context.fillStyle="#e8fbff";context.beginPath();context.ellipse(0,0,radius*.2,radius*.1,0,0,Math.PI*2);context.fill();context.fillStyle=fighter.secondaryColor||"#0b1020";context.beginPath();context.arc(Math.sin(phase)*radius*.035,0,radius*.065,0,Math.PI*2);context.fill();}
+      const cast=fighter.visualState?.cast;if(cast){const progress=OA.clamp(cast.life/cast.maxLife,0,1);context.strokeStyle=this.hexToRgba(cast.color,.35+.45*progress);context.lineWidth=2;for(let i=0;i<3;i++){const start=phase+i*Math.PI*2/3;context.beginPath();context.arc(0,0,radius+6+i*3,start,start+.7+progress);context.stroke();}}
+    }
+
     drawCharacterPattern(context, fighter, radius, time) {
       const texture=fighter.texture||"core",color=fighter.glowColor||fighter.stroke,pulse=.75+Math.sin(time*4+fighter.ai.phase)*.2;
       context.save();context.rotate(fighter.rotation*.35);context.strokeStyle=this.hexToRgba(color,.42);context.fillStyle=this.hexToRgba(fighter.secondaryColor||color,.18);context.lineWidth=1.4;
@@ -293,6 +318,7 @@
       context.globalCompositeOperation = "lighter";
       for (const projectile of this.projectiles.pool) {
         if (!projectile.active) continue;
+        if(projectile.x<-40||projectile.y<-40||projectile.x>this.width+40||projectile.y>this.height+40)continue;
         context.save();
         context.translate(projectile.x, projectile.y);
         context.rotate(projectile.rotation);
@@ -331,6 +357,12 @@
           context.strokeStyle = effect.color; context.lineWidth = 2;
           context.beginPath(); context.arc(effect.x, effect.y, 16 + ratio * 55, 0, Math.PI * 2); context.stroke();
           context.beginPath(); context.moveTo(effect.x - 10, effect.y); context.lineTo(effect.x + 10, effect.y); context.moveTo(effect.x, effect.y - 10); context.lineTo(effect.x, effect.y + 10); context.stroke();
+        } else if(effect.type==="abilityTelegraph"){
+          const ratio=1-effect.life/effect.maxLife,pulse=.45+.55*Math.sin(ratio*Math.PI),radius=Math.max(22,effect.radius*(.78+ratio*.22));context.strokeStyle=effect.color;context.fillStyle=this.hexToRgba(effect.color,.035+pulse*.045);context.lineWidth=1.5+pulse*1.5;context.setLineDash(effect.colorIndependent?[8,6]:[]);
+          if(effect.shape==="line"||effect.shape==="arrow"){const ox=effect.originX??effect.owner?.x??effect.x,oy=effect.originY??effect.owner?.y??effect.y,dx=effect.x-ox,dy=effect.y-oy,length=Math.hypot(dx,dy)||1,nx=-dy/length,ny=dx/length,width=effect.shape==="arrow"?16:Math.max(10,radius*.16);context.beginPath();context.moveTo(ox+nx*width,oy+ny*width);context.lineTo(effect.x+nx*width,effect.y+ny*width);context.lineTo(effect.x+nx*width*1.8-dx/length*18,effect.y+ny*width*1.8-dy/length*18);context.lineTo(effect.x,effect.y);context.lineTo(effect.x-nx*width*1.8-dx/length*18,effect.y-ny*width*1.8-dy/length*18);context.lineTo(effect.x-nx*width,effect.y-ny*width);context.lineTo(ox-nx*width,oy-ny*width);context.closePath();context.fill();context.stroke();}
+          else if(effect.shape==="cone"){const ox=effect.owner?.x??effect.originX??effect.x,oy=effect.owner?.y??effect.originY??effect.y,angle=Math.atan2(effect.y-oy,effect.x-ox),spread=.48;context.beginPath();context.moveTo(ox,oy);context.arc(ox,oy,radius,angle-spread,angle+spread);context.closePath();context.fill();context.stroke();}
+          else {context.beginPath();context.arc(effect.x,effect.y,radius,0,Math.PI*2);context.fill();context.stroke();if(effect.shape==="area"){context.setLineDash([2,7]);context.beginPath();context.arc(effect.x,effect.y,radius*.62,0,Math.PI*2);context.stroke();}}
+          context.setLineDash([]);if(effect.colorIndependent){context.strokeStyle="rgba(236,247,250,.65)";context.lineWidth=1;for(let i=0;i<4;i++){const a=i*Math.PI/2;context.beginPath();context.moveTo(effect.x+Math.cos(a)*radius*.84,effect.y+Math.sin(a)*radius*.84);context.lineTo(effect.x+Math.cos(a)*radius,effect.y+Math.sin(a)*radius);context.stroke();}}
         } else if(effect.type==="telegraph"){
           const ratio=1-effect.life/effect.maxLife;context.strokeStyle=effect.color;context.fillStyle=this.hexToRgba(effect.color,.06+ratio*.1);context.lineWidth=2+ratio*2;context.setLineDash([7,8]);context.beginPath();context.arc(effect.x,effect.y,Math.max(18,effect.radius*(.35+ratio*.65)),0,Math.PI*2);context.fill();context.stroke();context.setLineDash([]);
         }
@@ -343,6 +375,7 @@
       context.globalCompositeOperation = "lighter";
       for (const particle of this.particles.particles) {
         if (!particle.active) continue;
+        if(particle.x<-60||particle.y<-60||particle.x>this.width+60||particle.y>this.height+60)continue;
         const opacity = OA.clamp(particle.life / particle.maxLife, 0, 1);
         context.strokeStyle = context.fillStyle = this.hexToRgba(particle.color, opacity);
         if (particle.type === "streak"||particle.type.includes("trail")||particle.type.includes("arc")) {
@@ -392,7 +425,7 @@
     }
 
     drawDebug(context, world) {
-      for (const fighter of [world.player, world.enemy]) {
+      for (const fighter of OA.getFighters(world)) {
         context.lineWidth = 1.5;
         context.strokeStyle = "#ffcc58";
         context.beginPath(); context.moveTo(fighter.x, fighter.y); context.lineTo(fighter.x + fighter.vx * 0.18, fighter.y + fighter.vy * 0.18); context.stroke();

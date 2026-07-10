@@ -3,7 +3,7 @@
 
   const OrbArena = window.OrbArena = window.OrbArena || {};
 
-  OrbArena.VERSION = "0.4.0-cinematic-pacing";
+  OrbArena.VERSION = "0.6.0-design-ability-remaster";
   OrbArena.CREDITS = Object.freeze({ creator: "Duke Dandalian", text: "Todos os direitos de criação, design, desenvolvimento e direção atribuídos a Duke Dandalian." });
   OrbArena.CONFIG = Object.freeze({
     arena: Object.freeze({ width: 960, height: 540, padding: 18 }),
@@ -31,5 +31,12 @@
 
   OrbArena.lerp = function (start, end, amount) {
     return start + (end - start) * amount;
+  };
+
+  // Compatibilidade para simulações legadas; o TeamSystem substitui estes helpers em partidas modernas.
+  OrbArena.getFighters = (world, aliveOnly = false) => (world.fighters || [world.player, world.enemy]).filter((fighter) => fighter && (!aliveOnly || fighter.alive));
+  OrbArena.findTarget = (world, fighter) => {
+    const candidates = OrbArena.getFighters(world, true).filter((other) => other !== fighter && (world.match?.friendlyFire || (other.teamId || other.team) !== (fighter.teamId || fighter.team)));
+    return candidates.sort((a, b) => Math.hypot(a.x - fighter.x, a.y - fighter.y) - Math.hypot(b.x - fighter.x, b.y - fighter.y))[0] || null;
   };
 }());

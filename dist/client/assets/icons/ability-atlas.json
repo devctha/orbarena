@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "type": "procedural-css-atlas",
+  "source": "ability-id-hash",
+  "states": ["ready", "cooldown", "disabled", "autocast", "grayscale"],
+  "elements": ["Cinético", "Energia", "Arcano", "Escudo", "Gravidade", "Temporal", "Veneno", "Fogo", "Gelo", "Elétrico", "Clone", "Caos"]
+}

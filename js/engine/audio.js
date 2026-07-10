@@ -83,6 +83,7 @@
       this.tone(frequency, 0.16, category === "caos" ? "sawtooth" : "sine", 0.15, category === "defesa" ? 120 : -25);
       if (power > 30) this.tone(frequency * 1.5, 0.22, "triangle", 0.08, 60, 0.04);
     }
+    skillPhase(phase, ability) { const base={Temporal:350,Veneno:125,Fogo:205,Gelo:410,Gravidade:76,Luz:520,Trevas:112,Clone:290,Elétrico:455,Caos:138,Cinético:230,Arcano:315,Escudo:390,Energia:270}[ability.element]||250;if(phase==="cast")this.tone(base,.1,"sine",.065,55,0,"effects");else if(phase==="critical")this.tone(base*.72,.2,"sawtooth",.13,-40,0,"effects");else this.tone(base*.88,.07,"triangle",.075,-25,0,"effects"); }
 
     countdown(number) { this.tone(number === 0 ? 620 : 300 + number * 45, number === 0 ? 0.24 : 0.1, "square", 0.18, 80); }
     interface(kind="select") { this.tone(kind==="confirm"?520:390,.055,"sine",.07,45,0,"ui"); }

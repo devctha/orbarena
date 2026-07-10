@@ -31,6 +31,8 @@
       this.draftUI = new OA.DraftUI(this);
       this.remasterUI = new OA.RemasterUI(this);
       this.toolsUI = new OA.ToolsUI(this);
+      this.visualLabUI = new OA.VisualLabUI(this);
+      this.homeRemasterUI = new OA.HomeRemasterUI(this);
       this.game = new OA.Game(document.querySelector("#arena-canvas"), this.audio, {
         onFrame: (world, loop, particles) => this.battleUI.update(world, loop, particles),
         onComplete: (result) => this.completeBattle(result)
@@ -140,6 +142,7 @@
       this.game.stop();
       this.showScreen("menu");
       this.updateRecord();
+      this.homeRemasterUI?.render();
     }
 
     togglePause() {

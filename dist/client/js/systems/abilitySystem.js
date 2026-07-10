@@ -15,17 +15,17 @@
     assign(fighter, weapon, requested = null) {
       const active = OA.ABILITIES.filter((ability) => ability.type === "active");
       const preferred = weapon.kind === "projectile" ? ["ofensivo", "controle", "movimento"] : ["impacto", "movimento", "defesa"];
-      const requestedIds = requested && typeof requested === "object" ? [requested.active, requested.secondary, requested.passive, requested.ultimate].filter(Boolean) : [];
-      const selected = requestedIds.map((id) => OA.abilityById(id)).filter((ability) => ability && ability.type === "active").slice(0, 3);
+      const requestedIds = requested && typeof requested === "object" ? [requested.active, requested.secondary, requested.tertiary, requested.quaternary, requested.passive, requested.ultimate].filter(Boolean) : [];
+      const selected = requestedIds.map((id) => OA.abilityById(id)).filter((ability) => ability && ability.type === "active").slice(0, 4);
       for (const category of preferred) {
         const pool = active.filter((ability) => ability.category === category && !selected.includes(ability));
         if (pool.length) selected.push(this.random.pick(pool));
       }
-      while (selected.length < 3) {
+      while (selected.length < 4) {
         const ability = this.random.pick(active);
         if (!selected.includes(ability)) selected.push(ability);
       }
-      fighter.abilities = selected.slice(0, 3);
+      fighter.abilities = selected.slice(0, 4);
       fighter.reactiveAbility = OA.abilityById(requested?.reactive) || this.random.pick(OA.ABILITIES.filter((ability) => ability.type === "reactive"));
       for (const ability of [...fighter.abilities, fighter.reactiveAbility]) fighter.abilityCooldowns[ability.id] = this.random.range(0.5, 2.4);
       fighter.ai.abilityDecision = this.random.range(0.35, 1.1);
@@ -37,7 +37,7 @@
       this.updateZones(world, dt);
       this.updateEffects(world, dt);
       OA.CinematicAbilitySystem?.update(world,dt,this);
-      for (const fighter of [world.player, world.enemy]) {
+      for (const fighter of OA.getFighters(world)) {
         const abilityDt = dt * (world.timeScales?.ability[fighter.team] || 1);
         fighter.damageReduction = fighter.status.damageReduction > 0 ? (fighter.statusPower.damageReduction || 0.5) : 0;
         this.updateBurn(world, fighter, dt);
@@ -45,8 +45,9 @@
         fighter.ai.abilityDecision -= abilityDt;
         if (fighter.ai.abilityDecision > 0) continue;
         fighter.ai.abilityDecision = this.random.range(0.22, 0.58);
-        const target = fighter === world.player ? world.enemy : world.player;
-        const ready = fighter.abilities.filter((ability) => (fighter.abilityCooldowns[ability.id] || 0) <= 0 && this.isUseful(ability, fighter, target));
+        const target = OA.findTarget(world, fighter);
+        if (!target) continue;
+        const ready = fighter.abilities.filter((ability) => (!world.controlSystem || world.controlSystem.canAutoCast(fighter, ability)) && (!world.controlSystem || world.controlSystem.available(fighter, ability)) && (fighter.abilityCooldowns[ability.id] || 0) <= 0 && this.isUseful(ability, fighter, target));
         if (ready.length && this.random.chance(0.72)) this.use(world, fighter, target, this.pickByUtility(ready, fighter, target));
       }
     }
@@ -76,8 +77,14 @@
       if (!ability || !actor.alive || (!reactive && actor.status.silenced > 0)) return false;
       if (!reactive && actor.status.prison > 0 && (ability.category === "movimento" || ["dash", "multiDash", "teleportToward", "teleportRandom", "phaseThrough", "ghostDash", "chainTeleport", "swapPosition"].includes(ability.effect))) return false;
       if ((actor.abilityCooldowns[ability.id] || 0) > 0) return false;
+      const chargeState = !reactive ? actor.abilityState?.[ability.id] : null;
+      if (chargeState && chargeState.charges <= 0) return false;
       const cooldownScale = world.intensity > 1 ? 1 + (world.intensity - 1) * 0.22 : 1;
-      actor.abilityCooldowns[ability.id] = ability.cooldown / cooldownScale;
+      actor.abilityCooldowns[ability.id] = chargeState?.maxCharges > 1 && chargeState.charges > 1 ? 0.18 : ability.cooldown / cooldownScale;
+      if (chargeState) {
+        chargeState.charges = Math.max(0, chargeState.charges - 1);
+        if (!chargeState.rechargeTimer) chargeState.rechargeTimer = chargeState.recharge / cooldownScale;
+      }
       actor.lastAbility = ability;
       actor.telemetry.abilitiesUsed += 1;
       if(ability.cooldown>=13)actor.telemetry.ultimatesUsed=(actor.telemetry.ultimatesUsed||0)+1;
@@ -85,6 +92,7 @@
       this.audio.ability(ability.category, ability.power);
       this.particles.emitAbility(actor.x, actor.y, ability.color, ability.category);
       this.particles.emitText(actor.x, actor.y - actor.radius - 22, ability.name.toUpperCase(), ability.color, false);
+      world.presentationSystem?.activate(world,actor,target,ability);
       this.execute(world, actor, target, ability);
       world.events.push({ type: "ability", fighter: actor, target, ability: ability.id });
       if (ability.cooldown >= 13) world.events.push({ type: "ultimate", fighter: actor, target, ability: ability.id });
@@ -178,7 +186,8 @@
         if (event.type === "collision" && actor.status.contactAura > 0) this.radial(world, actor, event.target, 105, actor.statusPower.contactAura || 12, 160, "contact-aura");
         const reactive = actor.reactiveAbility;
         if (reactive?.params.trigger === event.type && (actor.abilityCooldowns[reactive.id] || 0) <= 0) {
-          const target = event.target || event.attacker || (actor === world.player ? world.enemy : world.player);
+          const target = event.target || event.attacker || OA.findTarget(world, actor);
+          if (!target) continue;
           this.use(world, actor, target, reactive, true);
         }
       }
@@ -195,16 +204,17 @@
       for (const zone of world.zones) {
         zone.life -= dt;
         zone.tick -= dt;
-        const target = zone.owner === world.player ? world.enemy : world.player;
-        const direction = OA.Vector.normalize(zone.x - target.x, zone.y - target.y);
-        if (direction.length > zone.radius + target.radius) continue;
-        if (zone.kind === "gravity" || zone.kind === "blackHole") {
-          const force = zone.power * (1 - direction.length / (zone.radius + target.radius) * 0.45);
-          target.applyForce(direction.x * force * target.mass, direction.y * force * target.mass);
+        for (const target of OA.getFighters(world).filter((fighter) => world.teamSystem ? world.teamSystem.isHostile(world, zone.owner, fighter) : fighter !== zone.owner)) {
+          const direction = OA.Vector.normalize(zone.x - target.x, zone.y - target.y);
+          if (direction.length > zone.radius + target.radius) continue;
+          if (zone.kind === "gravity" || zone.kind === "blackHole") {
+            const force = zone.power * (1 - direction.length / (zone.radius + target.radius) * 0.45);
+            target.applyForce(direction.x * force * target.mass, direction.y * force * target.mass);
+          }
+          if (zone.kind === "blackHole" && zone.tick <= 0) { zone.tick = 0.4; this.combat.dealDamage(world, zone.owner, target, 3.2, { source: "ability", abilityId: "black-hole", noRandomCrit: true }); }
+          if (zone.kind === "slow") target.setStatus("slow", 0.15, zone.power);
+          if (zone.kind === "silence") target.setStatus("silenced", 0.15, 1);
         }
-        if (zone.kind === "blackHole" && zone.tick <= 0) { zone.tick = 0.4; this.combat.dealDamage(world, zone.owner, target, 3.2, { source: "ability", abilityId: "black-hole", noRandomCrit: true }); }
-        if (zone.kind === "slow") target.setStatus("slow", 0.15, zone.power);
-        if (zone.kind === "silence") target.setStatus("silenced", 0.15, 1);
       }
       world.zones = world.zones.filter((zone) => zone.life > 0);
     }
@@ -218,7 +228,8 @@
           effect.tick -= dt;
           if (effect.tick <= 0 && effect.owner.alive) {
             effect.tick = 0.62;
-            const target = effect.owner === world.player ? world.enemy : world.player;
+            const target = OA.findTarget(world, effect.owner);
+            if (!target) continue;
             const direction = OA.Vector.normalize(target.x - effect.owner.x, target.y - effect.owner.y);
             this.projectiles.spawn({ owner: effect.owner, source: "ability", abilityId: "drones", kind: "drone", x: effect.owner.x + direction.y * 34, y: effect.owner.y - direction.x * 34, vx: direction.x * 520, vy: direction.y * 520, radius: 3, damage: effect.damage, knockback: 55, life: 2, color: effect.color });
           }
@@ -227,7 +238,8 @@
           effect.hitCooldown = Math.max(0, effect.hitCooldown - dt);
           effect.x = effect.owner.x + Math.cos(effect.angle + effect.phase) * effect.radius;
           effect.y = effect.owner.y + Math.sin(effect.angle + effect.phase) * effect.radius;
-          const target = effect.owner === world.player ? world.enemy : world.player;
+          const target = OA.findTarget(world, effect.owner);
+          if (!target) continue;
           if (effect.hitCooldown <= 0 && Math.hypot(target.x - effect.x, target.y - effect.y) < target.radius + 8) {
             effect.hitCooldown = 0.42;
             this.combat.dealDamage(world, effect.owner, target, effect.damage, { source: "ability", abilityId: "orbitals" });

@@ -42,6 +42,7 @@
       attacker.telemetry[`${source === "projectile" ? "weapon" : source}Damage`] = (attacker.telemetry[`${source === "projectile" ? "weapon" : source}Damage`] || 0) + dealt;
       this.logger.logDamage(world.time, attacker, target, dealt, critical, source === "projectile" ? "weapon" : source, metadata.abilityId);
       this.particles.emitDamage(target.x, target.y - target.radius, dealt, critical, attacker.color);
+      if(metadata.abilityId)world.presentationSystem?.impact(world,attacker,target,metadata.abilityId,critical);
       world.events.push({ type: "damage", fighter: attacker, target, damage: dealt, critical, source, abilityId: metadata.abilityId });
       if (critical) world.events.push({ type: "criticalTaken", fighter: target, attacker, damage: dealt });
       if (critical) this.particles.emitTyped?.("critical", target.x, target.y, attacker.color, 18, "critical");

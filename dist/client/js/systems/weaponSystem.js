@@ -18,8 +18,10 @@
     }
 
     update(world, dt) {
-      this.updateFighter(world, world.player, world.enemy, dt);
-      this.updateFighter(world, world.enemy, world.player, dt);
+      for (const fighter of OA.getFighters(world)) {
+        const target = OA.findTarget(world, fighter);
+        if (target) this.updateFighter(world, fighter, target, dt);
+      }
     }
 
     updateFighter(world, fighter, target, dt) {
