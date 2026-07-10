@@ -170,6 +170,21 @@
         case "reactBlockPulse": this.radial(world, actor, target, ability.range, 0, ability.power, ability.id); break;
         case "reactAbilityEcho": for (const id of Object.keys(actor.abilityCooldowns)) actor.abilityCooldowns[id] *= 1 - ability.power; break;
         case "reactCollisionReset": { const oldest = Object.entries(actor.abilityCooldowns).sort((a, b) => b[1] - a[1])[0]; if (oldest) actor.abilityCooldowns[oldest[0]] = 0; break; }
+        case "pulseBreak": this.radial(world,actor,target,ability.range,ability.power,p.knockback,ability.id);for(const projectile of this.projectiles.pool)if(projectile.active&&projectile.team!==actor.team&&Math.hypot(projectile.x-actor.x,projectile.y-actor.y)<ability.range)projectile.active=false;break;
+        case "venomTrail": for(let i=0;i<5;i++)this.schedule(world,i*.28,()=>{world.characterZones.push({owner:actor,kind:"poison",x:actor.x,y:actor.y,radius:ability.range,life:p.duration,maxLife:p.duration,tick:0,power:ability.power,color:ability.color,data:{interval:.55}});});break;
+        case "spikeBloom": actor.setStatus("spikeArmor",p.duration,ability.power);this.radial(world,actor,target,ability.range,ability.power*.55,260,ability.id);break;
+        case "timeDrag": world.zones.push({owner:actor,kind:"timeDrag",x:target.x,y:target.y,radius:ability.range,life:p.duration,maxLife:p.duration,tick:0,power:ability.power,color:ability.color});break;
+        case "gravityCrush": world.zones.push({owner:actor,kind:"gravityCrush",x:target.x,y:target.y,radius:ability.range,life:p.duration,maxLife:p.duration,tick:.4,power:340,color:ability.color});this.schedule(world,p.duration,()=>this.blastPoint(world,actor,target,target.x,target.y,ability.range*.7,ability.power,ability.id));break;
+        case "mirrorClone": if(!actor._mirrorCloneLock){actor._mirrorCloneLock=p.duration;this.summonSystem?.spawn(world,actor,{kind:"mirror-clone",life:p.duration,health:actor.maxHealth*.22,damage:actor.damage*.55,scale:.72,limit:1});}break;
+        case "shieldBurst": actor.addShield(ability.power);world.effects.push({type:"shieldBurst",owner:actor,life:10,maxLife:10,lastShield:actor.shield,damage:p.damage,radius:ability.range,color:ability.color});break;
+        case "arcChain": {const enemies=world.teamSystem.enemies(world,actor).slice(0,p.jumps);let previous=actor;enemies.forEach((enemy,index)=>{const amount=ability.power*Math.pow(.72,index);this.combat.dealDamage(world,actor,enemy,amount,{source:"ability",abilityId:ability.id,damageType:"electric"});this.particles.emitLightning(previous.x,previous.y,enemy.x,enemy.y,ability.color);previous=enemy;});break;}
+        case "frostLock": target._frostMarks=(target._frostMarks||0)+1;this.combat.dealDamage(world,actor,target,ability.power,{source:"ability",abilityId:ability.id,damageType:"ice",noRandomCrit:true});if(target._frostMarks>=p.marks){target._frostMarks=0;target.setStatus("frozen",.9,1);this.particles.emitTyped?.("ice-shard",target.x,target.y,ability.color,16,"frost");}break;
+        case "meteorDash": actor._meteorDash={damage:p.damage,abilityId:ability.id,timer:1.2};actor.setStatus("ram",1.2,.35);actor.nextImpactMultiplier=1.45;this.impulse(actor,direction,ability.power);break;
+        case "voidField": world.zones.push({owner:actor,kind:"voidField",x:target.x,y:target.y,radius:ability.range,life:p.duration,maxLife:p.duration,tick:.1,power:ability.power,color:ability.color});break;
+        case "sonicRing": this.radial(world,actor,target,ability.range,ability.power,p.knockback,ability.id);world.effects.push({type:"sonicRing",owner:actor,x:actor.x,y:actor.y,life:.75,maxLife:.75,radius:ability.range,color:ability.color});break;
+        case "healingOrbit": world.effects.push({type:"healingOrbit",owner:actor,life:p.duration,maxLife:p.duration,count:p.count,tick:0,angle:0,power:ability.power,color:ability.color});break;
+        case "chronoRewind": {const snapshot={x:actor.x,y:actor.y,health:actor.health,vx:actor.vx,vy:actor.vy};world.effects.push({type:"chronoGhost",owner:actor,x:snapshot.x,y:snapshot.y,life:p.delay,maxLife:p.delay,color:ability.color});this.schedule(world,p.delay,()=>{if(!actor.alive)return;actor.x=snapshot.x;actor.y=snapshot.y;actor.vx=snapshot.vx;actor.vy=snapshot.vy;actor.heal(Math.min(actor.maxHealth*.22,Math.max(0,snapshot.health-actor.health)));});break;}
+        case "wallDetonation": actor._wallDetonation={armed:false,timer:p.duration,damage:ability.power,radius:ability.range};break;
         default: throw new Error(`Efeito de habilidade desconhecido: ${effect}`);
       }
     }
@@ -184,6 +199,8 @@
           this.radial(world, actor, event.target, 135, damage, 280, "impact-explosion");
         }
         if (event.type === "collision" && actor.status.contactAura > 0) this.radial(world, actor, event.target, 105, actor.statusPower.contactAura || 12, 160, "contact-aura");
+        if(event.type==="collision"&&actor._meteorDash){this.radial(world,actor,event.target,135,actor._meteorDash.damage,360,actor._meteorDash.abilityId);world.characterZones.push({owner:actor,kind:"fire",x:event.x||actor.x,y:event.y||actor.y,radius:55,life:4,maxLife:4,tick:0,power:2.6,color:"#ff7652",data:{interval:.5}});actor._meteorDash=null;}
+        if(event.type==="wall"&&actor._wallDetonation){if(!actor._wallDetonation.armed){actor._wallDetonation.armed=true;actor._wallDetonation.x=actor.x;actor._wallDetonation.y=actor.y;}else{const mark=actor._wallDetonation;this.blastPoint(world,actor,event.target||OA.findTarget(world,actor),mark.x,mark.y,mark.radius,mark.damage,"wall-detonation");actor._wallDetonation=null;}}
         const reactive = actor.reactiveAbility;
         if (reactive?.params.trigger === event.type && (actor.abilityCooldowns[reactive.id] || 0) <= 0) {
           const target = event.target || event.attacker || OA.findTarget(world, actor);
@@ -207,11 +224,14 @@
         for (const target of OA.getFighters(world).filter((fighter) => world.teamSystem ? world.teamSystem.isHostile(world, zone.owner, fighter) : fighter !== zone.owner)) {
           const direction = OA.Vector.normalize(zone.x - target.x, zone.y - target.y);
           if (direction.length > zone.radius + target.radius) continue;
-          if (zone.kind === "gravity" || zone.kind === "blackHole") {
+          if (zone.kind === "gravity" || zone.kind === "blackHole" || zone.kind === "gravityCrush") {
             const force = zone.power * (1 - direction.length / (zone.radius + target.radius) * 0.45);
             target.applyForce(direction.x * force * target.mass, direction.y * force * target.mass);
           }
           if (zone.kind === "blackHole" && zone.tick <= 0) { zone.tick = 0.4; this.combat.dealDamage(world, zone.owner, target, 3.2, { source: "ability", abilityId: "black-hole", noRandomCrit: true }); }
+          if(zone.kind==="gravityCrush"&&zone.tick<=0){zone.tick=.4;this.combat.dealDamage(world,zone.owner,target,Math.min(8,2+(zone.maxLife-zone.life)*1.6),{source:"ability",abilityId:"gravity-crush",noRandomCrit:true,damageType:"gravity",dot:true});}
+          if(zone.kind==="timeDrag"){target.setStatus("slow",.18,zone.power);target.attackTimer=Math.max(target.attackTimer,.08);for(const projectile of this.projectiles.pool)if(projectile.active&&projectile.team===target.team&&Math.hypot(projectile.x-zone.x,projectile.y-zone.y)<zone.radius){projectile.vx*=.985;projectile.vy*=.985;}}
+          if(zone.kind==="voidField"){target.setStatus("silenced",.16,1);if(zone.tick<=0){zone.tick=.6;this.combat.dealDamage(world,zone.owner,target,zone.power,{source:"ability",abilityId:"void-field",noRandomCrit:true,damageType:"void",dot:true});}for(const projectile of this.projectiles.pool)if(projectile.active&&projectile.team!==zone.owner.team&&Math.hypot(projectile.x-zone.x,projectile.y-zone.y)<zone.radius&&projectile.damage<16)projectile.active=false;}
           if (zone.kind === "slow") target.setStatus("slow", 0.15, zone.power);
           if (zone.kind === "silence") target.setStatus("silenced", 0.15, 1);
         }
@@ -224,6 +244,9 @@
         effect.life -= dt;
         effect.angle = (effect.angle || 0) + dt * 3.2;
         if (effect.type === "clone") { effect.x = effect.owner.x + Math.cos(effect.angle * 1.7) * 72; effect.y = effect.owner.y + Math.sin(effect.angle * 2.1) * 52; }
+        if(effect.type==="shieldBurst"&&effect.owner.alive){if(effect.lastShield>0&&effect.owner.shield<=0){const target=OA.findTarget(world,effect.owner);if(target)this.radial(world,effect.owner,target,effect.radius,effect.damage,320,"shield-burst");effect.life=0;}effect.lastShield=effect.owner.shield;}
+        if(effect.type==="healingOrbit"&&effect.owner.alive){effect.tick-=dt;if(effect.tick<=0&&effect.count>0&&effect.owner.healthRatio()<.82){effect.tick=1.2;effect.owner.heal(effect.power);effect.count-=1;this.particles.emitTyped?.("heal-mote",effect.owner.x,effect.owner.y,effect.color,10,"heal");}}
+        if(effect.owner?._mirrorCloneLock)effect.owner._mirrorCloneLock=Math.max(0,effect.owner._mirrorCloneLock-dt);
         if (effect.type === "drone") {
           effect.tick -= dt;
           if (effect.tick <= 0 && effect.owner.alive) {

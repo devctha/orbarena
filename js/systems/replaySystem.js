@@ -18,7 +18,7 @@
       }
       if (this.markers.length > 180) this.markers.splice(0, this.markers.length - 180);
     }
-    finalize(world) { return { version: 1, seed: world.seed, mode: world.mode, arenaId: world.arena.id, arena: { width: world.arena.width, height: world.arena.height, padding: world.arena.padding }, duration: world.time, interval: this.interval, snapshots: this.snapshots, markers: this.markers }; }
+    finalize(world) { return { version: 1, seed: world.seed, mode: world.mode, gameModeId:world.gameModeId||"orb", arenaId: world.arena.id, arena: { width: world.arena.width, height: world.arena.height, padding: world.arena.padding }, duration: world.time, interval: this.interval, snapshots: this.snapshots, markers: this.markers }; }
     static sample(replay, time) {
       if (!replay?.snapshots?.length) return null;
       const index = OA.clamp(Math.floor(time / replay.interval), 0, replay.snapshots.length - 1), a = replay.snapshots[index], b = replay.snapshots[Math.min(index + 1, replay.snapshots.length - 1)], blend = b.time === a.time ? 0 : OA.clamp((time - a.time) / (b.time - a.time), 0, 1);

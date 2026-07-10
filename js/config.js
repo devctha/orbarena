@@ -3,7 +3,7 @@
 
   const OrbArena = window.OrbArena = window.OrbArena || {};
 
-  OrbArena.VERSION = "0.6.0-design-ability-remaster";
+  OrbArena.VERSION = "0.7.0-combat-stick-arena";
   OrbArena.CREDITS = Object.freeze({ creator: "Duke Dandalian", text: "Todos os direitos de criação, design, desenvolvimento e direção atribuídos a Duke Dandalian." });
   OrbArena.CONFIG = Object.freeze({
     arena: Object.freeze({ width: 960, height: 540, padding: 18 }),

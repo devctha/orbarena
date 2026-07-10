@@ -15,6 +15,7 @@
 .hud-ident strong { overflow: hidden; text-overflow: ellipsis; font: 800 16px var(--display); letter-spacing: .08em; }
 .hud-ident > b { color: #b9f5ff; font: 700 12px var(--display); }
 .health-track { height: 9px; padding: 2px; border: 1px solid rgba(134,193,216,.25); background: rgba(3,7,12,.8); }
+.health-track{position:relative}.health-track::after{content:"";position:absolute;left:2px;bottom:-5px;width:var(--shield,0);height:2px;background:#79dfff;box-shadow:0 0 7px #79dfff;transition:width .16s}.health-track.damage-strong{animation:health-hit .18s steps(2)}@keyframes health-hit{50%{border-color:#fff;filter:brightness(1.8)}}
 .health-track i { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #1fa4be, var(--cyan)); box-shadow: 0 0 10px rgba(68,231,244,.4); transition: width .18s; }
 .enemy-hud .health-track i { margin-left: auto; background: linear-gradient(90deg, #ff6c91, #9652ff); box-shadow: 0 0 10px rgba(255,82,119,.35); }
 .versus-mark { text-align: center; color: #52697b; font: italic 800 19px var(--display); }

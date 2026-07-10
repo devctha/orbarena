@@ -81,13 +81,14 @@
       context.translate(-this.width / 2, -this.height / 2);
       this.drawArena(context, world);
       this.drawArenaEnergy(context,world);
+      world.gameMode?.renderArena?.(context,world,this);
       this.drawDecals(context,world);
       this.drawZones(context, world);
       for (const fighter of fighters) this.drawTrail(context, fighter);
       this.drawEffects(context, world);
       this.drawProjectiles(context);
       this.drawSummons(context, world);
-      for (const fighter of fighters) if (fighter.alive) this.drawFighter(context, fighter, alpha, world.visualTime);
+      for (const fighter of fighters) if (fighter.alive) world.gameModeId==="stick"?world.gameMode.renderFighter(context,fighter,alpha,world.visualTime,this):this.drawFighter(context, fighter, alpha, world.visualTime);
       this.drawParticles(context);
       this.drawWaves(context);
       this.drawLightning(context);
@@ -357,6 +358,14 @@
           context.strokeStyle = effect.color; context.lineWidth = 2;
           context.beginPath(); context.arc(effect.x, effect.y, 16 + ratio * 55, 0, Math.PI * 2); context.stroke();
           context.beginPath(); context.moveTo(effect.x - 10, effect.y); context.lineTo(effect.x + 10, effect.y); context.moveTo(effect.x, effect.y - 10); context.lineTo(effect.x, effect.y + 10); context.stroke();
+        } else if(effect.type==="sonicRing"){
+          const ratio=1-effect.life/effect.maxLife;context.strokeStyle=effect.color;context.lineWidth=3*(1-ratio)+1;context.globalAlpha=1-ratio;for(let i=0;i<3;i++){context.beginPath();context.arc(effect.x,effect.y,effect.radius*ratio+i*18,0,Math.PI*2);context.stroke();}
+        } else if(effect.type==="healingOrbit"){
+          for(let i=0;i<effect.count;i++){const angle=effect.angle+i*Math.PI*2/Math.max(1,effect.count),x=effect.owner.x+Math.cos(angle)*48,y=effect.owner.y+Math.sin(angle)*22;context.fillStyle=effect.color;context.shadowColor=effect.color;context.shadowBlur=12;context.beginPath();context.arc(x,y,5,0,Math.PI*2);context.fill();}context.shadowBlur=0;
+        } else if(effect.type==="chronoGhost"){
+          context.globalAlpha=OA.clamp(effect.life/effect.maxLife,0,.45);context.strokeStyle=effect.color;context.lineWidth=2;context.beginPath();context.arc(effect.x,effect.y,effect.owner.radius+7,0,Math.PI*2);context.stroke();context.setLineDash([3,5]);context.beginPath();context.arc(effect.x,effect.y,effect.owner.radius+15,-Math.PI/2,-Math.PI/2+Math.PI*2*(effect.life/effect.maxLife));context.stroke();context.setLineDash([]);
+        } else if(effect.type==="shieldBurst"){
+          context.strokeStyle=effect.color;context.globalAlpha=.2+.35*Math.min(1,effect.owner.shield/Math.max(1,effect.owner.maxShield));context.lineWidth=3;context.beginPath();context.arc(effect.owner.x,effect.owner.y,effect.owner.radius+14+Math.sin(world.visualTime*7)*2,0,Math.PI*2);context.stroke();
         } else if(effect.type==="abilityTelegraph"){
           const ratio=1-effect.life/effect.maxLife,pulse=.45+.55*Math.sin(ratio*Math.PI),radius=Math.max(22,effect.radius*(.78+ratio*.22));context.strokeStyle=effect.color;context.fillStyle=this.hexToRgba(effect.color,.035+pulse*.045);context.lineWidth=1.5+pulse*1.5;context.setLineDash(effect.colorIndependent?[8,6]:[]);
           if(effect.shape==="line"||effect.shape==="arrow"){const ox=effect.originX??effect.owner?.x??effect.x,oy=effect.originY??effect.owner?.y??effect.y,dx=effect.x-ox,dy=effect.y-oy,length=Math.hypot(dx,dy)||1,nx=-dy/length,ny=dx/length,width=effect.shape==="arrow"?16:Math.max(10,radius*.16);context.beginPath();context.moveTo(ox+nx*width,oy+ny*width);context.lineTo(effect.x+nx*width,effect.y+ny*width);context.lineTo(effect.x+nx*width*1.8-dx/length*18,effect.y+ny*width*1.8-dy/length*18);context.lineTo(effect.x,effect.y);context.lineTo(effect.x-nx*width*1.8-dx/length*18,effect.y-ny*width*1.8-dy/length*18);context.lineTo(effect.x-nx*width,effect.y-ny*width);context.lineTo(ox-nx*width,oy-ny*width);context.closePath();context.fill();context.stroke();}

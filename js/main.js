@@ -33,6 +33,7 @@
       this.toolsUI = new OA.ToolsUI(this);
       this.visualLabUI = new OA.VisualLabUI(this);
       this.homeRemasterUI = new OA.HomeRemasterUI(this);
+      this.sidebarUI = new OA.SidebarUI(this);
       this.game = new OA.Game(document.querySelector("#arena-canvas"), this.audio, {
         onFrame: (world, loop, particles) => this.battleUI.update(world, loop, particles),
         onComplete: (result) => this.completeBattle(result)

@@ -13,6 +13,7 @@
 
     dealDamage(world, attacker, target, rawDamage, metadata = {}) {
       if (!attacker?.alive || !target?.alive) return 0;
+      const pipeline=world.damageSystem||(world.damageSystem=OA.DamageSystem?new OA.DamageSystem(this.particles,this.audio,this.logger):{apply:(currentWorld,currentTarget,input)=>{const before=currentTarget.telemetry.blockedDamage||0,dealt=currentTarget.applyDamage(input.baseDamage,{source:input.sourceType,critical:input.critical,ignoreArmor:input.ignoreArmor,armorPen:input.penetration,dot:input.dot}),sourceFighter=input.source;if(dealt>0){sourceFighter.telemetry.damageDealt=(sourceFighter.telemetry.damageDealt||0)+dealt;currentTarget.telemetry.damageTaken=(currentTarget.telemetry.damageTaken||0)+dealt;this.logger.logDamage(currentWorld.time,sourceFighter,currentTarget,dealt,input.critical,input.sourceType,input.abilityId);currentWorld.events.push({type:"damage",fighter:sourceFighter,target:currentTarget,damage:dealt,critical:input.critical,source:input.sourceType,abilityId:input.abilityId});}return{dealt,absorbed:Math.max(0,(currentTarget.telemetry.blockedDamage||0)-before),blocked:0,immune:dealt<=0,killed:!currentTarget.alive,packet:input};}});
       const source = metadata.source || "ability";
       let critical = Boolean(metadata.critical);
       if (!metadata.noRandomCrit && !critical) critical = this.random.chance(attacker.critChance);
@@ -23,32 +24,22 @@
 
       if (target.status.reflecting > 0 && (source === "projectile" || source === "ability")) {
         const reflected = Math.min(rawDamage * 0.55, attacker.maxHealth * 0.18);
-        attacker.applyDamage(reflected, { source: "ability", ignoreArmor: false });
+        pipeline.apply(world,attacker,{source:target,sourceId:target.id,ownerId:target.id,teamId:target.teamId,sourceType:"ability",abilityId:"reflection",baseDamage:reflected,damageType:"energy"});
         damage *= 0.35;
       }
       damage = this.burstProtection ? this.burstProtection.limit(world, attacker, target, damage, metadata) : damage;
-      const blockedBefore = target.telemetry.blockedDamage;
-      const dealt = target.applyDamage(damage, metadata);
-      if (dealt <= 0) {
-        if (target.telemetry.blockedDamage > blockedBefore) world.events.push({ type: "blocked", fighter: target, attacker });
-        return 0;
-      }
+      const direction=metadata.hitDirection||OA.Vector.normalize(target.x-attacker.x,target.y-attacker.y);
+      const result=pipeline.apply(world,target,{...metadata,source:attacker,sourceId:attacker.id,ownerId:attacker.id,teamId:attacker.teamId,sourceType:source,baseDamage:damage,critical,damageType:metadata.damageType||({collision:"kinetic",weapon:"physical",projectile:"physical",ability:"energy"}[source]||source),penetration:metadata.armorPen||metadata.penetration||0,hitPosition:metadata.hitPosition||{x:target.x,y:target.y},hitDirection:direction,timestamp:world.time,tags:[...(metadata.tags||[]),...(metadata.ultimate?["ultimate"]:[])]});
+      const dealt=result.dealt;
+      if(dealt<=0){if(result.absorbed>0)world.events.push({type:"blocked",fighter:target,attacker,absorbed:result.absorbed});return 0;}
       target._damageTypes||=new Set();target._damageTypes.add(source);
       this.burstProtection?.record(world, target, dealt, metadata);
-      attacker.telemetry.damageDealt = (attacker.telemetry.damageDealt || 0) + dealt;
-      target.telemetry.damageTaken = (target.telemetry.damageTaken || 0) + dealt;
-      world.teamSystem?.recordDamage(world, attacker, target, dealt);
-
       attacker.telemetry[`${source === "projectile" ? "weapon" : source}Damage`] = (attacker.telemetry[`${source === "projectile" ? "weapon" : source}Damage`] || 0) + dealt;
-      this.logger.logDamage(world.time, attacker, target, dealt, critical, source === "projectile" ? "weapon" : source, metadata.abilityId);
-      this.particles.emitDamage(target.x, target.y - target.radius, dealt, critical, attacker.color);
       if(metadata.abilityId)world.presentationSystem?.impact(world,attacker,target,metadata.abilityId,critical);
-      world.events.push({ type: "damage", fighter: attacker, target, damage: dealt, critical, source, abilityId: metadata.abilityId });
       if (critical) world.events.push({ type: "criticalTaken", fighter: target, attacker, damage: dealt });
       if (critical) this.particles.emitTyped?.("critical", target.x, target.y, attacker.color, 18, "critical");
       if (target.healthRatio() <= 0.5 && !target._halfTriggered) { target._halfTriggered = true; world.events.push({ type: "halfHealth", fighter: target, attacker }); }
       if (target.healthRatio() <= 0.2 && !target._lowTriggered) { target._lowTriggered = true; world.events.push({ type: "lowHealth", fighter: target, attacker }); }
-      if (!target.alive) { this.particles.emitDeath(target.x, target.y, target.color); world.camera.shake?.add(.9,.45,34,"critical"); world.teamSystem?.recordElimination(world, target, attacker, { ...metadata, source, critical }); }
       return dealt;
     }
 

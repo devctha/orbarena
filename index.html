@@ -39,27 +39,36 @@
     <main class="screen-stack">
       <section class="screen active" id="screen-menu" aria-labelledby="menu-title">
         <div class="menu-layout">
-          <aside class="menu-rail panel">
-            <div class="rail-label">NAVEGAÇÃO</div>
+          <button class="sidebar-toggle" type="button" aria-controls="main-sidebar" aria-expanded="false">☰ NAVEGAÇÃO</button>
+          <aside class="menu-rail panel" id="main-sidebar">
+            <div class="rail-label"><span>NAVEGAÇÃO</span><button class="sidebar-close" type="button" aria-label="Fechar navegação">×</button></div>
             <nav id="main-nav" aria-label="Menu principal">
+              <div class="nav-group" data-nav-group="principal"><small>PRINCIPAL</small>
               <button class="nav-item active" type="button" data-section="inicio"><span>01</span> Início</button>
               <button class="nav-item" type="button" data-action="play"><span>02</span> Jogar</button>
               <button class="nav-item" type="button" data-action="quick"><span>03</span> Batalha rápida</button>
-              <button class="nav-item" type="button" data-module-screen="build" title="III indica profundidade do módulo"><span>04</span> Criar build <em>III</em></button>
-              <button class="nav-item" type="button" data-module-screen="builds" title="V indica profundidade do módulo"><span>05</span> Builds salvas <em>V</em></button>
-              <button class="nav-item" type="button" data-module-screen="history" title="V indica profundidade do módulo"><span>06</span> Histórico <em>V</em></button>
+              </div><div class="nav-group" data-nav-group="construcao"><small>CONSTRUÇÃO</small>
+              <button class="nav-item" type="button" data-module-screen="build"><span>04</span> Criar build</button>
+              <button class="nav-item" type="button" data-module-screen="builds"><span>05</span> Builds salvas</button>
+              <button class="nav-item" type="button" data-module-screen="history"><span>06</span> Histórico</button>
+              </div><div class="nav-group" data-nav-group="conteudo"><small>CONTEÚDO</small>
+              <button class="nav-item" type="button" data-module-screen="arsenal"><span>07</span> Arsenal</button>
+              <button class="nav-item" type="button" data-module-screen="perks"><span>08</span> Perks</button>
+              <button class="nav-item" type="button" data-module-screen="abilities"><span>09</span> Habilidades</button>
+              <button class="nav-item" type="button" data-module-screen="bestiary"><span>10</span> Bestiário</button>
+              </div><div class="nav-group" data-nav-group="avancado"><small>AVANÇADO</small>
+              <button class="nav-item" type="button" data-open-draft><span>11</span> Draft completo</button>
+              <button class="nav-item" type="button" data-remaster="profile"><span>12</span> Perfil &amp; conquistas</button>
+              <button class="nav-item" type="button" data-remaster="collection"><span>13</span> Coleção &amp; comparar</button>
+              <button class="nav-item" type="button" data-remaster="replays"><span>14</span> Replays</button>
+              <button class="nav-item" type="button" data-remaster="tutorial"><span>15</span> Tutorial</button>
+              </div><div class="nav-group" data-nav-group="ferramentas"><small>FERRAMENTAS</small>
+              <button class="nav-item" type="button" data-tool="sandbox"><span>16</span> Sandbox</button>
+              <button class="nav-item" type="button" data-tool="editor"><span>17</span> Editor de arena</button>
+              </div><div class="nav-group nav-institutional" data-nav-group="institucional"><small>INSTITUCIONAL</small>
+              <button class="nav-item" type="button" data-modal="roadmap"><span aria-hidden="true">◇</span> Roteiro do projeto</button>
+              <button class="nav-item" type="button" data-modal="credits"><span aria-hidden="true">◇</span> Créditos</button></div>
             </nav>
-            <div class="rail-separator"></div>
-            <nav aria-label="Compêndio">
-              <button class="nav-item" type="button" data-module-screen="arsenal" title="II indica profundidade do módulo"><span>07</span> Arsenal <em>II</em></button>
-              <button class="nav-item" type="button" data-module-screen="perks" title="III indica profundidade do módulo"><span>08</span> Perks <em>III</em></button>
-              <button class="nav-item" type="button" data-module-screen="abilities" title="III indica profundidade do módulo"><span>09</span> Habilidades <em>III</em></button>
-              <button class="nav-item" type="button" data-module-screen="bestiary" title="IV indica profundidade do módulo"><span>10</span> Bestiário <em>IV</em></button>
-            </nav>
-            <div class="rail-footer">
-              <button class="text-button" type="button" data-modal="roadmap">Roteiro do projeto</button>
-              <button class="text-button" type="button" data-modal="credits">Créditos</button>
-            </div>
           </aside>
 
           <div class="menu-content">
@@ -160,6 +169,7 @@
             </div>
 
             <div class="panel-title section-title"><span>FÍSICA AVANÇADA</span><small>AJUSTE O COMPORTAMENTO DA ARENA</small></div>
+            <label class="field full-field"><span>Modo de jogo</span><select id="game-mode-select"><option value="orb" selected>Orb Arena · combate orbital</option><option value="stick">Stick Arena · luta 2D</option></select></label>
             <label class="field full-field"><span>Arena</span><select id="arena-select"><option value="classic" selected>Arena Clássica · retangular</option><option value="reactor">Círculo do Reator · alternativo</option><option value="forge">Forja Orbital · alternativo</option><option value="sanctum">Santuário Abissal · alternativo</option></select></label>
             <label class="field full-field"><span>Duração da batalha</span><select id="duration-preset"><option value="short">Curta · 20–35 s</option><option value="standard" selected>Padrão · 45–75 s</option><option value="long">Longa · 80–120 s</option><option value="epic">Épica · 120–180 s</option></select></label>
             <label class="field full-field"><span>Preset físico</span>
@@ -201,7 +211,7 @@
               <div class="panel-title"><span>PROTOCOLO DE PARTIDA</span><small>SEED REPRODUZÍVEL</small></div>
               <label class="field full-field"><span>Seed</span><div class="input-action"><input id="seed-input" type="text" maxlength="24" value=""><button id="random-seed" type="button" aria-label="Gerar nova seed">↻</button></div></label>
               <label class="field full-field"><span>Dificuldade</span><select id="difficulty-select"><option value="easy">Fácil</option><option value="normal" selected>Normal</option><option value="hard">Difícil</option></select></label>
-              <div class="random-loadout"><span>LOADOUT PROCEDURAL</span><p>1 arma física · kit de personagem · 3 poderes · 1 reativo · 3 perks</p><small>110 personagens, 160 habilidades e 12 armas disponíveis.</small></div>
+              <div class="random-loadout"><span>LOADOUT PROCEDURAL</span><p>1 arma física · kit de personagem · 3 poderes · 1 reativo · 3 perks</p><small>110 personagens, 175 habilidades e 12 armas disponíveis.</small></div>
               <div class="threat-row"><span>Battle Score</span><strong id="battle-score">342</strong></div>
               <button class="button button-primary button-full" id="launch-button" type="button"><span>INICIAR BATALHA</span><b>→</b></button>
               <p class="match-note">O adversário será sintetizado com poder próximo ao seu perfil.</p>
@@ -264,7 +274,7 @@
             <button class="control-button" id="debug-button" type="button">⌘ DEBUG</button>
           </div>
         </div>
-        <div class="character-lab panel" id="character-lab" hidden><b>CHARACTER LAB</b><button data-lab="heal">Curar</button><button data-lab="selfDamage">Dano próprio</button><button data-lab="targetDamage">Dano no alvo</button><button data-lab="reset">Resetar recargas</button><button data-lab="ultimate">Ultimate</button><button data-lab="clone">Clone</button><button data-lab="projectiles">Projéteis</button><button data-lab="status">Status no alvo</button><button data-lab="time">Tempo</button></div>
+        <div class="character-lab panel" id="character-lab" hidden><b>COMBAT DEBUG LAB</b><button data-lab="damage10">Dano 10</button><button data-lab="damage100">Dano 100</button><button data-lab="heal">Curar</button><button data-lab="zeroHealth">Zerar vida</button><button data-lab="shield">Adicionar escudo</button><button data-lab="poison">Veneno</button><button data-lab="fire">Fogo</button><button data-lab="stun">Stun</button><button data-lab="reset">Resetar cooldown</button><button data-lab="skill">Ativar skill</button><button data-lab="ultimate">Ultimate</button><button data-lab="clone">Clone</button><button data-lab="projectiles">Projéteis</button><button data-lab="time">Tempo</button></div>
       </section>
 
       <section class="screen" id="screen-results" aria-labelledby="results-title">
@@ -350,10 +360,12 @@
   <script defer src="js/data/weapons.js"></script>
   <script defer src="js/data/perks.js"></script>
   <script defer src="js/data/abilities.js"></script>
+  <script defer src="js/data/correctiveSkills.js"></script>
   <script defer src="js/data/cinematicAbilities.js"></script>
   <script defer src="js/data/catalogMetadata.js"></script>
   <script defer src="js/data/abilityVisuals.js"></script>
   <script defer src="js/entities/fighter.js"></script>
+  <script defer src="js/systems/damageSystem.js"></script>
   <script defer src="js/entities/projectile.js"></script>
   <script defer src="js/characters/CharacterFactory.js"></script>
   <script defer src="js/characters/CharacterMechanics.js"></script>
@@ -398,11 +410,13 @@
   <script defer src="js/systems/metaGameSystem.js"></script>
   <script defer src="js/systems/musicSystem.js"></script>
   <script defer src="js/systems/contentValidationSystem.js"></script>
+  <script defer src="js/systems/combatAuditSystem.js"></script>
   <script defer src="js/systems/buildSystem.js"></script>
   <script defer src="js/systems/progressionSystem.js"></script>
   <script defer src="js/engine/physics.js"></script>
   <script defer src="js/engine/renderer.js"></script>
   <script defer src="js/engine/gameLoop.js"></script>
+  <script defer src="js/modes/gameModes.js"></script>
   <script defer src="js/ui/menuUI.js"></script>
   <script defer src="js/ui/characterSelectUI.js"></script>
   <script defer src="js/ui/rectangularPreview.js"></script>
@@ -422,6 +436,7 @@
   <script defer src="js/ui/toolsUI.js"></script>
   <script defer src="js/ui/visualLabUI.js"></script>
   <script defer src="js/ui/homeRemasterUI.js"></script>
+  <script defer src="js/ui/sidebarUI.js"></script>
   <script defer src="js/game.js"></script>
   <script defer src="js/main.js"></script>
 </body>

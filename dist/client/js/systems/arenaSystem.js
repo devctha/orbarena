@@ -72,7 +72,7 @@
       if(arena.shape!=="circle")arena.inset=world.battlePhase==="climax"?OA.lerp(0,18,OA.clamp((world.time-pacing.escalationEnd)/Math.max(1,pacing.suddenDeathAt-pacing.escalationEnd),0,1)):world.suddenDeath?Math.min(34,18+(world.time-pacing.suddenDeathAt)*.5):0;
       if (world.suddenDeath) {
         arena.damageTick -= dt;
-        if (arena.damageTick <= 0) { arena.damageTick = 1; for (const fighter of OA.getFighters(world)) if(fighter.alive) fighter.applyDamage(1.1 + (world.time - pacing.suddenDeathAt) * 0.06, { source: "ability", dot: true, ignoreArmor: true }); }
+        if (arena.damageTick <= 0) { arena.damageTick = 1; for (const fighter of OA.getFighters(world)) if(fighter.alive){const amount=1.1+(world.time-pacing.suddenDeathAt)*.06;if(OA.DamageSystem&&world.damageSystem instanceof OA.DamageSystem)world.damageSystem.apply(world,fighter,{sourceId:"arena-collapse",sourceType:"arena",damageType:"void",baseDamage:amount,dot:true,ignoreArmor:true,sameSourceHitCooldown:.5});else fighter.applyDamage(amount,{source:"ability",dot:true,ignoreArmor:true});} }
       }
     }
 

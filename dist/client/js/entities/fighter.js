@@ -45,6 +45,14 @@
       this.impactMultiplier = options.impactMultiplier || 1;
       this.maxHealth = options.health;
       this.health = options.health;
+      this.resistance = options.resistance || 0;
+      this.damageImmunityBySource = new Map();
+      this.hitRegistry = new Map();
+      this.hitsThisFrame = 0;
+      this.lastDamageTime = -Infinity;
+      this.lastDamagePacket = null;
+      this.isDead = false;
+      this.deathHandled = false;
       this.baseDamage = options.damage;
       this.damage = options.damage;
       this.baseArmor = options.armor || 0;
@@ -129,6 +137,7 @@
       this.forceY = 0;
       this.ax = 0;
       this.ay = 0;
+      this.hitsThisFrame = 0;
     }
 
     tick(dt, abilityDt = dt) {
@@ -186,6 +195,7 @@
     }
 
     applyDamage(amount, metadata = {}) {
+      if(this.world?.damageSystem&&!metadata.localOnly){return this.world.damageSystem.apply(this.world,this,{...metadata,source:metadata.attacker||this,sourceId:metadata.sourceId||this.id,ownerId:metadata.ownerId||this.id,teamId:metadata.teamId||this.teamId,sourceType:typeof metadata.source==="string"?metadata.source:"ability",baseDamage:amount,damageType:metadata.damageType||"energy",penetration:metadata.armorPen||0}).dealt;}
       if (!this.alive || this.invulnerability > 0 || this.status.phased > 0) return 0;
       const armor = metadata.ignoreArmor ? 0 : Math.max(0, this.armor * (1 - (metadata.armorPen || 0)));
       const reduction = armor / (100 + armor);
@@ -215,6 +225,7 @@
           this.alive = true;
         } else {
           this.alive = false;
+          this.isDead = true;
         }
       }
       return actual;
@@ -273,6 +284,10 @@
     }
 
     healthRatio() { return OA.clamp(this.health / this.maxHealth, 0, 1); }
+    get currentHealth(){return this.health;}
+    set currentHealth(value){this.health=OA.clamp(Number.isFinite(value)?value:0,0,this.maxHealth);}
+    get invulnerabilityTimer(){return this.invulnerability;}
+    set invulnerabilityTimer(value){this.invulnerability=Math.max(0,Number(value)||0);}
   }
 
   OA.Fighter = Fighter;

@@ -97,6 +97,7 @@
     defeat() { this.tone(180, 0.55, "sawtooth", 0.18, -110); }
     powerUp() { this.tone(460,.13,"sine",.12,180); }
     killFeed() { this.tone(240,.08,"square",.07,-35,0,"ui"); }
+    stick(kind="light") { const map={light:[190,.06,"triangle",65],medium:[125,.09,"square",15],heavy:[72,.16,"sawtooth",-24],block:[440,.05,"square",-60],parry:[620,.12,"sine",180],dash:[260,.06,"triangle",120],land:[88,.08,"triangle",-12],combo:[520,.08,"square",90],ko:[58,.42,"sawtooth",-18]};const [frequency,duration,type,slide]=map[kind]||map.light;this.tone(frequency,duration,type,.12,slide); }
     cancel() { this.tone(170,.06,"triangle",.06,-55,0,"ui"); }
     dispose() { for (const voice of this.voices) try { voice.stop(); } catch (_) {} this.voices.clear(); }
   }

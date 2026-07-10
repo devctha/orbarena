@@ -1,0 +1,21 @@
+(function(){
+  "use strict";
+  const OA=window.OrbArena,skills=[];
+  const add=(id,name,category,effect,cooldown,power,range,color,description,params={})=>skills.push(Object.freeze({id,name,category,effect,cooldown,power,range,color,description,type:"active",params:Object.freeze(params)}));
+  add("pulse-break","Pulse Break","impacto","pulseBreak",8,18,155,"#67efff","Onda circular que causa dano, repele e destrói projéteis fracos.",{knockback:340});
+  add("venom-trail","Venom Trail","ofensivo","venomTrail",10,2.4,62,"#78ed72","Rastro venenoso persistente com dano contínuo e redução de cura.",{duration:6});
+  add("spike-bloom","Spike Bloom","defesa","spikeBloom",11,12,120,"#dce9ff","Espinhos emergem, causam contato e ampliam repulsão.",{duration:5});
+  add("time-drag","Time Drag","controle","timeDrag",13,.48,175,"#69bfff","Zona temporal reduz movimento, projéteis e taxa de ataque.",{duration:5});
+  add("gravity-crush","Gravity Crush","controle","gravityCrush",15,27,190,"#a878ff","Singularidade puxa, comprime e explode com dano limitado.",{duration:2.4});
+  add("mirror-clone","Mirror Clone","caos","mirrorClone",14,.55,0,"#98dcff","Clone temporário repete pressão ofensiva sem criar outros clones.",{duration:7});
+  add("shield-burst","Shield Burst","defesa","shieldBurst",13,36,150,"#75dfff","Escudo que explode em dano e repulsão ao quebrar.",{damage:18});
+  add("arc-chain","Arc Chain","ofensivo","arcChain",10,23,360,"#92f5ff","Raio encadeado perde dano a cada salto.",{jumps:4});
+  add("frost-lock","Frost Lock","controle","frostLock",9,7,330,"#baf5ff","Marcas de gelo culminam em congelamento breve.",{marks:3});
+  add("meteor-dash","Meteor Dash","movimento","meteorDash",12,470,0,"#ff8657","Dash carregado que explode no contato e deixa fogo.",{damage:25});
+  add("void-field","Void Field","controle","voidField",14,3.2,170,"#7b68d8","Zona remove projéteis, reduz buffs e causa dano leve.",{duration:6});
+  add("sonic-ring","Sonic Ring","impacto","sonicRing",8,16,175,"#77e9ff","Ondas sonoras causam dano, empurram e distorcem a área.",{knockback:290});
+  add("healing-orbit","Healing Orbit","defesa","healingOrbit",15,5,58,"#72eca5","Três orbes de cura orbitam e são consumidos sob pressão.",{count:3,duration:10});
+  add("chrono-rewind","Chrono Rewind","defesa","chronoRewind",18,.22,0,"#72aaff","Salva posição e vida e retorna com recuperação limitada.",{delay:3});
+  add("wall-detonation","Wall Detonation","impacto","wallDetonation",12,22,145,"#ffd06c","Marca a parede no ricochete; a próxima colisão detona.",{duration:7});
+  OA.ABILITIES=Object.freeze([...OA.ABILITIES,...skills]);OA.CORRECTIVE_SKILL_IDS=Object.freeze(skills.map((skill)=>skill.id));
+}());

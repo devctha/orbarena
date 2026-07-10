@@ -83,6 +83,7 @@
         duration: world.time,
         seed: world.seed,
         mode: world.mode || "duel",
+        gameModeId: world.gameModeId || "orb",
         durationPreset:world.pacing?.id||"standard",
         finalPhase:world.battlePhase,
         arenaId: world.arena?.id || "classic",

@@ -46,7 +46,7 @@
     }
 
     present(world, difficultyLabel) {
-      document.querySelector("#battle-mode").textContent = `${world.mode === "lab" ? "CHARACTER LAB" : world.match?.label||world.mode} // ${difficultyLabel.toUpperCase()}`;
+      document.querySelector("#battle-mode").textContent = `${world.gameMode?.label?.toUpperCase()||"ORB ARENA"} · ${world.mode === "lab" ? "CHARACTER LAB" : world.match?.label||world.mode} // ${difficultyLabel.toUpperCase()}`;
       document.querySelector("#battle-seed").textContent = `SEED ${world.seed}`;
       document.querySelector("#player-name-hud").textContent = world.player.name;
       document.querySelector("#enemy-name-hud").textContent = world.enemy.name;
@@ -110,6 +110,19 @@
           `A P1      ${Math.round(Math.hypot(world.player.ax, world.player.ay))}`,
           `WALL P1   ${world.player.telemetry.wallBounces}`,
           `LOGS      ${world.logger.entries.length}`
+          ,`MODO      ${world.gameMode?.label||"Orb Arena"}`
+          ,`HP        ${world.player.currentHealth.toFixed(1)}/${world.player.maxHealth}`
+          ,`ESCUDO    ${world.player.shield.toFixed(1)}`
+          ,`ARMADURA  ${world.player.armor.toFixed(1)}`
+          ,`RESIST.   ${typeof world.player.resistance==="number"?world.player.resistance.toFixed(2):"TIPADA"}`
+          ,`ÚLT. DANO ${world.player.lastDamagePacket?.finalDamage?.toFixed?.(1)||0}`
+          ,`FONTE     ${world.player.lastDamagePacket?.sourceId||"—"}`
+          ,`ABILITY   ${world.player.lastDamagePacket?.abilityId||"—"}`
+          ,`BLOQUEADO ${(world.player.lastDamagePacket?.blocked||0).toFixed?.(1)||0}`
+          ,`HIT REG.  ${world.player.hitRegistry.size}`
+          ,`STATUS    ${Object.keys(world.player.status).filter((id)=>world.player.status[id]>0).join(",")||"—"}`
+          ,`MORTO     ${world.player.isDead}`
+          ,`PROJ.     ${this.app.game.projectiles.activeCount}`
         ].join("\n");
       }
     }
@@ -123,6 +136,7 @@
       const shield = fighter.shield > 0 ? ` +${Math.ceil(fighter.shield)}` : "";
       document.querySelector(`#${prefix}-hp-text`).textContent = `${health} / ${Math.round(fighter.maxHealth)}${shield}`;
       document.querySelector(`#${prefix}-health-bar`).style.width = `${fighter.healthRatio() * 100}%`;
+      const bar=document.querySelector(`#${prefix}-health-bar`),track=bar.parentElement,ratio=fighter.healthRatio();bar.style.background=ratio>.55?"linear-gradient(90deg,#1fa4be,#44e7f4)":ratio>.25?"linear-gradient(90deg,#d89232,#ffd36b)":"linear-gradient(90deg,#a91e43,#ff557c)";track.style.setProperty("--shield",`${Math.min(100,fighter.shield/Math.max(1,fighter.maxShield)*100)}%`);track.classList.toggle("damage-strong",fighter.world?.time-fighter.lastDamageTime<.16&&(fighter.lastDamagePacket?.finalDamage||0)>18);
       const systems=document.querySelector(`#${prefix}-systems`),ultimate=Math.round(fighter.characterState?.ultimateCharge||0),burst=fighter.burstProtection?.active>0?"BURST PROTECTION":"",power=fighter.wallBoostTimer>0?"WALL BOOST":fighter.status.haste>0?"VELOCIDADE":"";systems.innerHTML=`<span>ULT ${ultimate}%</span>${fighter.shield>0?`<span>ESCUDO ${Math.ceil(fighter.shield)}</span>`:""}${burst?`<b>${burst}</b>`:""}${power?`<em>${power}</em>`:""}`;
     }
 

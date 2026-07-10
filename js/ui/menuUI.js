@@ -78,6 +78,7 @@
         stroke: character.glow,
         trailColor: character.secondary,
         preset: presetName,
+        gameModeId: document.querySelector("#game-mode-select")?.value || "orb",
         score: this.calculateScore(preset),
         stats: { ...preset }
       };
@@ -86,7 +87,7 @@
     launch() {
       const seed = this.seedInput.value.trim() || OA.Random.createSeed();
       this.setSeed(seed);
-      this.app.startBattle(this.getBuild(), this.difficulty.value, seed, this.getPhysicsSettings(), { arenaId: document.querySelector("#arena-select").value, durationPreset:document.querySelector("#duration-preset").value });
+      const build=this.getBuild();this.app.startBattle(build, this.difficulty.value, seed, this.getPhysicsSettings(), { gameModeId:build.gameModeId,arenaId: document.querySelector("#arena-select").value, durationPreset:document.querySelector("#duration-preset").value });
     }
 
     applyPhysicsPreset(id) {
@@ -119,6 +120,7 @@
       this.colorInput.value = build.color;
       this.strokeInput.value = build.stroke;
       this.trailInput.value = build.trailColor;
+      if(document.querySelector("#game-mode-select"))document.querySelector("#game-mode-select").value=build.gameModeId||"orb";
       const radio = this.form.querySelector(`[name='preset'][value='${build.preset}']`);
       if (radio) radio.checked = true;
       this.updatePreset(build.preset);
