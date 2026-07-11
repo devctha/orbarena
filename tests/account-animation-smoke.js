@@ -1,0 +1,14 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),path=require("node:path"),vm=require("node:vm"),root=path.resolve(__dirname,"..");
+global.window=global;global.OrbArena={clamp:(value,min,max)=>Math.min(max,Math.max(min,value)),lerp:(a,b,t)=>a+(b-a)*t};
+vm.runInThisContext(fs.readFileSync(path.join(root,"js/modes/stickAnimationSystem.js"),"utf8"),{filename:"stickAnimationSystem.js"});
+const OA=global.OrbArena,animator=new OA.StickAnimationSystem(),fighter={alive:true,radius:20,vx:220,vy:0,deform:{flash:0,nx:1,ny:0},ai:{phase:0},healthRatio:()=>.8,stick:{state:"run",facing:1,onGround:true,animationTime:1}};
+animator.initialize(fighter);animator.update(fighter,1/60);assert.equal(OA.STICK_ANIMATION_STATES.length,61);assert.equal(fighter.stick.animation.state,"run");
+const joints=animator.skeleton(fighter,fighter.stick.animation.pose);for(const name of ["head","neck","chest","pelvis","shoulderL","elbowL","handL","shoulderR","elbowR","handR","hipL","kneeL","footL","hipR","kneeR","footR"])assert.ok(Number.isFinite(joints[name].x)&&Number.isFinite(joints[name].y),`articulação inválida: ${name}`);
+assert.equal(animator.canTransition("death","run"),false);fighter.deform.flash=.9;animator.update(fighter,1/60);assert.equal(fighter.stick.animation.state,"hit-heavy");assert.ok(fighter.stick.animation.ragdoll>0);
+const html=fs.readFileSync(path.join(root,"index.html"),"utf8"),account=fs.readFileSync(path.join(root,"js/ui/accountHubUI.js"),"utf8"),api=fs.readFileSync(path.join(root,"server/src/app.js"),"utf8"),schema=fs.readFileSync(path.join(root,"server/src/schema.js"),"utf8"),envExample=fs.readFileSync(path.join(root,"server/.env.example"),"utf8");
+assert.match(html,/control-mode-select/);assert.match(html,/account-economy\.css/);assert.ok(html.indexOf("stickAnimationSystem.js")<html.indexOf("gameModes.js"));
+for(const term of ["MINHA COLEÇÃO","PAINEL ADMINISTRATIVO","ONBOARDING","data-pull","migrate-save"])assert.ok(account.includes(term),`UI ausente: ${term}`);
+for(const endpoint of ["\\/auth\\/register","\\/auth\\/login","\\/shop\\/purchase","\\/banners","\\/admin\\/users","\\/me\\/migrate-save"])assert.ok(api.includes(endpoint),`endpoint ausente: ${endpoint}`);
+for(const table of ["users","profiles","sessions","wallets","inventory_items","currency_transactions","xp_transactions","gacha_pulls","gacha_pity","admin_audit_logs","migrations"])assert.ok(schema.includes(`TABLE IF NOT EXISTS ${table}`),`tabela ausente: ${table}`);
+assert.match(envExample,/ADMIN_INITIAL_PASSWORD=\s*$/m,"a senha inicial deve ser fornecida somente pelo ambiente do servidor");
+console.log("ACCOUNT_ANIMATION_OK",{stickStates:OA.STICK_ANIMATION_STATES.length,joints:Object.keys(joints).length,serverTables:11});

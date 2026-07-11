@@ -40,7 +40,7 @@
       }
       this.pollGamepad(world);
     }
-    canAutoCast(fighter, ability) { return fighter.controlMode === "AUTO" || fighter.controlMode === "MIXED" && fighter.autoCast?.[ability.id] !== false || fighter.controlMode === "PLAYER" && fighter.autoCast?.[ability.id] === true; }
+    canAutoCast(fighter, ability) { return fighter.controlMode === "AUTO" || fighter.controlMode === "MIXED" && fighter.autoCast?.[ability.id] !== false || ["PLAYER", "MANUAL"].includes(fighter.controlMode) && fighter.autoCast?.[ability.id] === true; }
     available(fighter, ability) { const state = fighter.abilityState?.[ability.id]; return (!state || state.charges > 0) && (fighter.abilityCooldowns[ability.id] || 0) <= 0 && (fighter.globalCooldown || 0) <= 0 && !fighter.castQueue; }
     request(world, fighter, slot, targetHint = null) {
       if (!fighter?.alive) return { ok: false, reason: "Orb indisponível" };

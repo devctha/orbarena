@@ -198,7 +198,7 @@
       this.drawWeapon(context, fighter, x, y);
       context.save();
       context.translate(x, y);
-      const moveAngle=Math.atan2(fighter.vy,fighter.vx),stretch=OA.clamp(fighter.currentSpeed()/Math.max(1,fighter.maxSpeed)-.55,0,.22);context.rotate(moveAngle);context.scale(1+stretch,1-stretch*.48);context.rotate(-moveAngle);
+      const speedRatio=OA.clamp(fighter.currentSpeed()/Math.max(1,fighter.maxSpeed),0,1.5),idleBreath=Math.sin(time*2.6+fighter.ai.phase)*.018,spawnEase=OA.clamp((fighter.age||1)/.45,.72,1),moveAngle=Math.atan2(fighter.vy,fighter.vx),stretch=OA.clamp(speedRatio-.55,0,.26);context.scale(spawnEase*(1+idleBreath),spawnEase*(1-idleBreath));context.rotate(moveAngle);context.scale(1+stretch,1-stretch*.48);context.rotate(-moveAngle);
       const impactAngle = Math.atan2(fighter.deform.ny, fighter.deform.nx);
       context.rotate(impactAngle);
       context.scale(1 - fighter.deform.amount * 0.24, 1 + fighter.deform.amount * 0.17);
@@ -209,6 +209,7 @@
       const sprite = this.fighterSprite(fighter, radius);
       context.drawImage(sprite.surface, -sprite.offset, -sprite.offset, sprite.logical, sprite.logical);
       this.drawOrbMaterial(context,fighter,radius,time);
+      const coreShift=OA.clamp(speedRatio,0,1)*radius*.13,corePulse=1+Math.sin(time*5+fighter.ai.phase)*.06+(fighter.castQueue? .12:0);context.save();context.rotate(-fighter.rotation*.35);context.translate(Math.cos(moveAngle)*coreShift,Math.sin(moveAngle)*coreShift);context.scale(corePulse,corePulse);const inner=context.createRadialGradient(-radius*.1,-radius*.12,1,0,0,radius*.34);inner.addColorStop(0,"rgba(255,255,255,.92)");inner.addColorStop(.28,this.hexToRgba(fighter.glowColor||fighter.color,.72));inner.addColorStop(1,this.hexToRgba(fighter.color,0));context.fillStyle=inner;context.beginPath();context.arc(0,0,radius*.34,0,Math.PI*2);context.fill();context.restore();
       context.beginPath(); context.arc(0, 0, radius, 0, Math.PI * 2);
       context.lineWidth = 2.2;
       context.strokeStyle = fighter.invulnerability > 0 ? "#ffffff" : fighter.stroke;
@@ -242,6 +243,8 @@
         context.lineWidth = 3;
         context.beginPath(); context.arc(0, 0, radius + 9, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, fighter.shield / fighter.maxShield)); context.stroke();
       }
+      if(fighter.castQueue||fighter.lastAbility?.presentation?.active){const castProgress=fighter.castQueue?1-OA.clamp(fighter.castQueue.delay/Math.max(.01,fighter.castQueue.ability?.castTime||.25),0,1):.5;context.save();context.rotate(time*2.4);context.strokeStyle=this.hexToRgba(fighter.glowColor||fighter.color,.45+.35*castProgress);context.lineWidth=2;context.setLineDash([3,5]);for(let ring=0;ring<2;ring+=1){context.rotate(Math.PI*.35);context.beginPath();context.arc(0,0,radius+12+ring*6+Math.sin(time*7+ring)*2,0,Math.PI*2);context.stroke();}context.setLineDash([]);context.restore();}
+      if(fighter.stunTimer>0||fighter.status.stunned>0){context.fillStyle="#fff5a6";for(let i=0;i<3;i+=1){const angle=time*5+i*Math.PI*2/3;context.beginPath();context.arc(Math.cos(angle)*(radius+10),-radius*.75+Math.sin(angle)*4,2.4,0,Math.PI*2);context.fill();}}
       if(fighter.burstProtection?.active>0){context.strokeStyle=this.hexToRgba("#d8f6ff",.55);context.lineWidth=2;context.setLineDash([2,5]);context.beginPath();context.arc(0,0,radius+13+Math.sin(time*9)*1.5,0,Math.PI*2);context.stroke();context.setLineDash([]);}
       if(this.settings?.statusEffects!==false){if(fighter.status.burning>0){context.fillStyle="#ff9b56";for(let i=0;i<3;i++){const a=time*2+i*2.1;context.beginPath();context.arc(Math.cos(a)*radius*.72,-radius+Math.sin(a)*5,2.2,0,Math.PI*2);context.fill();}}if(fighter.status.frozen>0){context.strokeStyle="#b9f3ff";context.beginPath();context.moveTo(-radius*.7,-radius*.2);context.lineTo(radius*.65,radius*.3);context.moveTo(-radius*.2,radius*.75);context.lineTo(radius*.25,-radius*.7);context.stroke();}if(fighter.status.slow>0){context.strokeStyle="#b898ff";context.globalAlpha=.5;context.beginPath();context.arc(0,0,radius+16,0,Math.PI*1.5);context.stroke();context.globalAlpha=1;}if(fighter.status.reflecting>0){context.strokeStyle="#9ff8ff";context.lineWidth=3;context.beginPath();context.arc(0,0,radius+11,0,Math.PI*2);context.stroke();}}
       context.strokeStyle = this.hexToRgba(fighter.wallBoostTimer > 0 ? "#fff39a" : fighter.color, fighter.wallBoostTimer > 0 ? 0.72 : 0.28);

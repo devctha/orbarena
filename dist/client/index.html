@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/modules.css">
   <link rel="stylesheet" href="css/v5.css">
   <link rel="stylesheet" href="css/design-system.css">
+  <link rel="stylesheet" href="css/account-economy.css?v=8">
 </head>
 <body>
   <div class="app-shell" id="app">
@@ -170,6 +171,7 @@
 
             <div class="panel-title section-title"><span>FÍSICA AVANÇADA</span><small>AJUSTE O COMPORTAMENTO DA ARENA</small></div>
             <label class="field full-field"><span>Modo de jogo</span><select id="game-mode-select"><option value="orb" selected>Orb Arena · combate orbital</option><option value="stick">Stick Arena · luta 2D</option></select></label>
+            <label class="field full-field control-mode-field"><span>Controle da Orb <button type="button" class="field-help" title="AUTO usa Skills e Ultimate automaticamente. MANUAL mantém o movimento automático e entrega Skills e Ultimate ao jogador.">?</button></span><select id="control-mode-select"><option value="AUTO" selected>AUTO · recomendado para aprender</option><option value="MANUAL">MANUAL · Skills e Ultimate pelo jogador</option></select><small>Você pode configurar Auto Cast individual no Draft completo.</small></label>
             <label class="field full-field"><span>Arena</span><select id="arena-select"><option value="classic" selected>Arena Clássica · retangular</option><option value="reactor">Círculo do Reator · alternativo</option><option value="forge">Forja Orbital · alternativo</option><option value="sanctum">Santuário Abissal · alternativo</option></select></label>
             <label class="field full-field"><span>Duração da batalha</span><select id="duration-preset"><option value="short">Curta · 20–35 s</option><option value="standard" selected>Padrão · 45–75 s</option><option value="long">Longa · 80–120 s</option><option value="epic">Épica · 120–180 s</option></select></label>
             <label class="field full-field"><span>Preset físico</span>
@@ -330,11 +332,13 @@
     </dialog>
   </div>
 
+  <script>window.ORB_API_BASE = location.hostname === "127.0.0.1" && location.port === "8080" ? "http://127.0.0.1:8788" : "/api";</script>
   <script defer src="js/config.js"></script>
   <script defer src="js/data/combatPacing.js"></script>
   <script defer src="js/data/matchModes.js"></script>
   <script defer src="js/state.js"></script>
   <script defer src="js/storage.js"></script>
+  <script defer src="js/api/client.js"></script>
   <script defer src="js/engine/vector.js"></script>
   <script defer src="js/engine/random.js"></script>
   <script defer src="js/data/characterClasses.js"></script>
@@ -416,6 +420,7 @@
   <script defer src="js/engine/physics.js"></script>
   <script defer src="js/engine/renderer.js"></script>
   <script defer src="js/engine/gameLoop.js"></script>
+  <script defer src="js/modes/stickAnimationSystem.js"></script>
   <script defer src="js/modes/gameModes.js"></script>
   <script defer src="js/ui/menuUI.js"></script>
   <script defer src="js/ui/characterSelectUI.js"></script>
@@ -437,6 +442,7 @@
   <script defer src="js/ui/visualLabUI.js"></script>
   <script defer src="js/ui/homeRemasterUI.js"></script>
   <script defer src="js/ui/sidebarUI.js"></script>
+  <script defer src="js/ui/accountHubUI.js?v=8"></script>
   <script defer src="js/game.js"></script>
   <script defer src="js/main.js"></script>
 </body>

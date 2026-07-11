@@ -1,0 +1,16 @@
+{
+  "name": "orb-arena-server",
+  "private": true,
+  "version": "0.8.0",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node src/server.js",
+    "seed:admin": "node scripts/seed-admin.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2"
+  }
+}
+

@@ -6,6 +6,7 @@
     constructor() {
       this.state = new OA.State();
       this.storage = new OA.Storage(OA.CONFIG.storageKey);
+      this.api = new OA.ApiClient();
       const saved = this.storage.read();
       this.state.settings = { ...this.state.settings, ...saved.settings };
       this.audio = new OA.AudioSystem(this.state.settings);
@@ -34,6 +35,7 @@
       this.visualLabUI = new OA.VisualLabUI(this);
       this.homeRemasterUI = new OA.HomeRemasterUI(this);
       this.sidebarUI = new OA.SidebarUI(this);
+      this.accountUI = new OA.AccountHubUI(this, this.api);
       this.game = new OA.Game(document.querySelector("#arena-canvas"), this.audio, {
         onFrame: (world, loop, particles) => this.battleUI.update(world, loop, particles),
         onComplete: (result) => this.completeBattle(result)
@@ -42,6 +44,7 @@
       this.bindGlobal();
       this.updateRecord();
       this.updateAudioButton();
+      this.accountUI.initialize();
     }
 
     openCharacterSelect() { this.game.stop(); this.characterSelectUI.render(); this.showScreen("characters"); }
@@ -96,7 +99,7 @@
 
     quickBattle() {
       const preset = OA.CONFIG.presets.balanced, character=this.randomCharacter();
-      const build = { characterId:character.id,name:character.name,color:character.color,stroke:character.glow,trailColor:character.secondary,preset:"balanced",score:this.balance.get(character.id),stats:{...preset} };
+      const build = { characterId:character.id,name:character.name,color:character.color,stroke:character.glow,trailColor:character.secondary,preset:"balanced",controlMode:this.state.settings.controlMode||"AUTO",score:this.balance.get(character.id),stats:{...preset} };
       this.startBattle(build, "normal", OA.Random.createSeed(), OA.getPhysicsPreset("pinball"));
     }
 
@@ -127,6 +130,7 @@
       this.resultsUI.present(result);
       this.updateRecord();
       this.showScreen("results");
+      if (!temporary) this.accountUI?.recordBattle(result);
     }
 
     restartBattle() {

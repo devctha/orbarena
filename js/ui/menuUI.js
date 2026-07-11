@@ -79,6 +79,7 @@
         trailColor: character.secondary,
         preset: presetName,
         gameModeId: document.querySelector("#game-mode-select")?.value || "orb",
+        controlMode: document.querySelector("#control-mode-select")?.value || this.app.state.settings.controlMode || "AUTO",
         score: this.calculateScore(preset),
         stats: { ...preset }
       };
@@ -87,7 +88,7 @@
     launch() {
       const seed = this.seedInput.value.trim() || OA.Random.createSeed();
       this.setSeed(seed);
-      const build=this.getBuild();this.app.startBattle(build, this.difficulty.value, seed, this.getPhysicsSettings(), { gameModeId:build.gameModeId,arenaId: document.querySelector("#arena-select").value, durationPreset:document.querySelector("#duration-preset").value });
+      const build=this.getBuild();this.app.state.settings.controlMode=build.controlMode;this.app.storage.saveSettings(this.app.state.settings);this.app.startBattle(build, this.difficulty.value, seed, this.getPhysicsSettings(), { gameModeId:build.gameModeId,arenaId: document.querySelector("#arena-select").value, durationPreset:document.querySelector("#duration-preset").value });
     }
 
     applyPhysicsPreset(id) {
@@ -121,6 +122,7 @@
       this.strokeInput.value = build.stroke;
       this.trailInput.value = build.trailColor;
       if(document.querySelector("#game-mode-select"))document.querySelector("#game-mode-select").value=build.gameModeId||"orb";
+      if(document.querySelector("#control-mode-select"))document.querySelector("#control-mode-select").value=build.controlMode||this.app.state.settings.controlMode||"AUTO";
       const radio = this.form.querySelector(`[name='preset'][value='${build.preset}']`);
       if (radio) radio.checked = true;
       this.updatePreset(build.preset);
